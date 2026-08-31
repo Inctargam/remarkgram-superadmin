@@ -1,46 +1,7 @@
-.page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.content {
-  display: flex;
-  flex: 1;
-  flex-direction: row;
-  align-items: flex-start;
-  width: 100%;
-  max-width: 1280px;
-  margin-inline: auto;
-}
-
-/* Starts under the header, then stays at the viewport top after the header scrolls away. */
-.sidebarSlot {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-index-sidebar);
-  display: block;
-  flex-shrink: 0;
-  height: 100vh;
-  overflow-y: auto;
-}
-
-.main {
-  flex: 1;
-  min-width: 0;
-}
-
 .title {
   margin: 24px;
   color: var(--color-text-primary);
   font-size: var(--font-size-h1);
   font-weight: var(--font-weight-h1);
   line-height: var(--line-height-h1);
-}
-
-@media (width > 1440px) {
-  .content {
-    max-width: none;
-    margin-inline: 0;
-  }
 }
