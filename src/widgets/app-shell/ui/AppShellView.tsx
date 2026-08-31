@@ -14,9 +14,11 @@ type Props = {
   children: ReactNode
   /** Static active sidebar item override for current route. */
   activeSidebarItemId?: NavItemId
+  /** Whether to render the sidebar. Auth pages render without it. */
+  hasSidebar?: boolean
 }
 
-export const AppShellView = ({ children, activeSidebarItemId }: Props) => {
+export const AppShellView = ({ children, activeSidebarItemId, hasSidebar = true }: Props) => {
   const [language, setLanguage] = useState<HeaderLanguage>('en')
   const languageSelector = <HeaderLanguageSwitcher value={language} onValueChange={setLanguage} />
 
@@ -29,9 +31,11 @@ export const AppShellView = ({ children, activeSidebarItemId }: Props) => {
         variant="guest"
       />
       <div className={styles.content}>
-        <div className={styles.sidebarSlot}>
-          <Sidebar activeItemId={activeSidebarItemId} />
-        </div>
+        {hasSidebar && (
+          <div className={styles.sidebarSlot}>
+            <Sidebar activeItemId={activeSidebarItemId} />
+          </div>
+        )}
         <main className={styles.main}>{children}</main>
       </div>
     </div>
