@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 
+import { useSessionStatus } from '@/shared/auth'
 import type { NavItemId } from '@/widgets/navigation'
 
 import { AppShellView } from './AppShellView'
@@ -14,8 +15,14 @@ type Props = {
   hasSidebar?: boolean
 }
 
-export const AppShell = ({ children, activeSidebarItemId, hasSidebar }: Props) => (
-  <AppShellView activeSidebarItemId={activeSidebarItemId} hasSidebar={hasSidebar}>
-    {children}
-  </AppShellView>
-)
+export const AppShell = ({ children, activeSidebarItemId, hasSidebar }: Props) => {
+  const status = useSessionStatus()
+
+  return (
+    <AppShellView
+      activeSidebarItemId={activeSidebarItemId}
+      hasSidebar={hasSidebar ?? status === 'authenticated'}>
+      {children}
+    </AppShellView>
+  )
+}

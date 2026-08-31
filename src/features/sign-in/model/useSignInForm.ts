@@ -1,4 +1,7 @@
+import { useRouter } from 'next/navigation'
 import { useForm, useWatch } from 'react-hook-form'
+
+import { sessionStore } from '@/shared/auth'
 
 type SignInFormValues = {
   email: string
@@ -6,6 +9,8 @@ type SignInFormValues = {
 }
 
 export const useSignInForm = () => {
+  const router = useRouter()
+
   const {
     register,
     handleSubmit,
@@ -20,7 +25,10 @@ export const useSignInForm = () => {
 
   const isSubmitDisabled = !hasAllValues || !isValid
 
-  const submitHandler = handleSubmit(() => {})
+  const submitHandler = handleSubmit(() => {
+    sessionStore.getState().setAuthenticated('mock-access-token')
+    router.push('/users')
+  })
 
   return {
     register,
