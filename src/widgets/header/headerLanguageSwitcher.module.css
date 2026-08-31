@@ -1,0 +1,20 @@
+.root {
+  width: 163px;
+}
+
+.valueContent,
+.optionContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flag {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+}
+
+.trigger {
+  padding-block: 5px;
+}
