@@ -1,6 +1,8 @@
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 
+import { loginAdmin } from '@/shared/api/graphql/client'
 import { sessionStore } from '@/shared/auth'
 
 type SignInFormValues = {
@@ -8,13 +10,17 @@ type SignInFormValues = {
   password: string
 }
 
+const INVALID_CREDENTIALS_MSG = 'Invalid email or password'
+
 export const useSignInForm = () => {
   const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const {
     register,
     handleSubmit,
     control,
+    setError,
     formState: { errors, isValid },
   } = useForm<SignInFormValues>({ mode: 'onBlur' })
 
@@ -23,16 +29,29 @@ export const useSignInForm = () => {
 
   const hasAllValues = Boolean(email) && Boolean(password)
 
-  const isSubmitDisabled = !hasAllValues || !isValid
+  const isSubmitDisabled = !hasAllValues || !isValid || isSubmitting
 
-  const submitHandler = handleSubmit(() => {
-    sessionStore.getState().setAuthenticated('mock-access-token')
-    router.push('/users')
+  const submitHandler = handleSubmit(async (data) => {
+    setIsSubmitting(true)
+
+    try {
+      const logged = await loginAdmin({ email: data.email, password: data.password })
+
+      if (logged) {
+        sessionStore.getState().setAuthenticated('admin-access-token')
+        router.push('/users')
+      } else {
+        setError('email', { message: INVALID_CREDENTIALS_MSG })
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   })
 
   return {
     register,
     errors,
+    isSubmitting,
     isSubmitDisabled,
     submitHandler,
   }
