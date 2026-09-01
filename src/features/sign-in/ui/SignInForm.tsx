@@ -2,7 +2,7 @@
 
 import { Button, Card, Input } from '@remark-gram/ui-kit'
 
-import { EMAIL_RULES, PASSWORD_LENGTH_RULES } from '@/entities/auth'
+import { EMAIL_RULES } from '@/entities/auth'
 
 import { useSignInForm } from '../model/useSignInForm'
 import styles from './SignInForm.module.css'
@@ -28,7 +28,7 @@ export const SignInForm = () => {
             placeholder="**********"
             type="password"
             error={errors.password?.message}
-            {...register('password', PASSWORD_LENGTH_RULES)}
+            {...register('password')}
           />
         </div>
 

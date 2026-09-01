@@ -1,1 +1,1 @@
-export { EMAIL_RULES, PASSWORD_LENGTH_RULES } from './model/validationRules'
+export { EMAIL_RULES } from './model/validationRules'
