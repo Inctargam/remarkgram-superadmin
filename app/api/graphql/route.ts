@@ -1,10 +1,13 @@
 import { createYoga } from 'graphql-yoga'
+import type { NextRequest } from 'next/server'
 
 import { createServerSchema } from '@/shared/api/graphql/server'
 
-const { handleRequest } = createYoga({
+const yoga = createYoga({
   schema: createServerSchema(),
   graphqlEndpoint: '/api/graphql',
 })
 
-export { handleRequest as GET, handleRequest as POST }
+export const GET = (request: NextRequest) => yoga.handleRequest(request, {})
+
+export const POST = (request: NextRequest) => yoga.handleRequest(request, {})
