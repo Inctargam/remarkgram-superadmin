@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { SortDirection, User, UserBlockStatus } from '@/entities/user'
 import { USERS_PAGE_SIZE, useUsersQuery } from '@/entities/user'
@@ -24,6 +24,13 @@ export type UsersListState = {
   changeStatusFilter: (value: UserBlockStatus) => void
   goToPage: (page: number) => void
   toggleSortBy: (field: UsersListSortField) => void
+}
+
+type UsersListFiltersSnapshot = {
+  term: string
+  statusFilter: UserBlockStatus
+  sortBy: UsersListSortField
+  sortDirection: SortDirection
 }
 
 const FIRST_PAGE = 1
@@ -63,9 +70,10 @@ export const useUsersList = (): UsersListState => {
   const goToPage = useCallback(
     (nextPage: number) => {
       const currentPath = pathname ?? window.location.pathname
+      const query = buildUsersPageQuery(nextPage)
 
       // `replace`, not `push`: paging is not a step the back button should have to undo.
-      router.replace(buildUsersPageQuery(nextPage) || currentPath, { scroll: false })
+      router.replace(query ? `${currentPath}?${query}` : currentPath, { scroll: false })
     },
     [pathname, router]
   )
@@ -116,13 +124,30 @@ export const useUsersList = (): UsersListState => {
     statusFilter,
   })
 
+  // Search, filter and sort changes restart the walk from the first page. The page
+  // parameter itself is deliberately absent: paging must not reset the page.
+  const filtersSnapshotRef = useRef<UsersListFiltersSnapshot>({
+    term: '',
+    statusFilter: 'ALL',
+    sortBy: 'createdAt',
+    sortDirection: 'desc',
+  })
+
   useEffect(() => {
-    if (page === FIRST_PAGE) {
+    const snapshot = filtersSnapshotRef.current
+    const isChanged =
+      snapshot.term !== debouncedSearchValue ||
+      snapshot.statusFilter !== statusFilter ||
+      snapshot.sortBy !== sortBy ||
+      snapshot.sortDirection !== sortDirection
+
+    if (!isChanged) {
       return
     }
 
+    filtersSnapshotRef.current = { term: debouncedSearchValue, statusFilter, sortBy, sortDirection }
     goToPage(FIRST_PAGE)
-  }, [debouncedSearchValue, goToPage, page, sortBy, sortDirection, statusFilter])
+  }, [debouncedSearchValue, goToPage, sortBy, sortDirection, statusFilter])
 
   return {
     errorMessage: error ? LOAD_ERROR_MESSAGE : null,
