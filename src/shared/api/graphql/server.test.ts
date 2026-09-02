@@ -70,6 +70,123 @@ type GetUsersData = {
   }
 }
 
+const GET_USER_QUERY = /* GraphQL */ `
+  query GetUser($userId: Int!) {
+    getUser(userId: $userId) {
+      id
+      userName
+      createdAt
+      profile {
+        firstName
+        lastName
+        avatars {
+          url
+          width
+          height
+        }
+      }
+      userBan {
+        reason
+      }
+    }
+  }
+`
+
+const GET_PAYMENTS_BY_USER_QUERY = /* GraphQL */ `
+  query GetPaymentsByUser($userId: Int!, $pageSize: Int, $pageNumber: Int) {
+    getPaymentsByUser(userId: $userId, pageSize: $pageSize, pageNumber: $pageNumber) {
+      items {
+        id
+        status
+        dateOfPayment
+        endDate
+        type
+        price
+        paymentType
+      }
+      pagesCount
+      page
+      pageSize
+      totalCount
+    }
+  }
+`
+
+const GET_FOLLOWERS_QUERY = /* GraphQL */ `
+  query GetFollowers(
+    $userId: Int!
+    $pageSize: Int
+    $pageNumber: Int
+    $sortBy: String
+    $sortDirection: SortDirection
+  ) {
+    getFollowers(
+      userId: $userId
+      pageSize: $pageSize
+      pageNumber: $pageNumber
+      sortBy: $sortBy
+      sortDirection: $sortDirection
+    ) {
+      items {
+        id
+        userId
+        userName
+        createdAt
+      }
+      pagesCount
+      page
+      pageSize
+      totalCount
+    }
+  }
+`
+
+const GET_FOLLOWING_QUERY = /* GraphQL */ `
+  query GetFollowing($userId: Int!, $pageSize: Int, $pageNumber: Int) {
+    getFollowing(userId: $userId, pageSize: $pageSize, pageNumber: $pageNumber) {
+      items {
+        id
+        userId
+        userName
+        createdAt
+      }
+      pagesCount
+      page
+      pageSize
+      totalCount
+    }
+  }
+`
+
+const GET_POSTS_BY_USER_QUERY = /* GraphQL */ `
+  query GetPostsByUser($userId: Int!) {
+    getPostsByUser(userId: $userId) {
+      pagesCount
+      pageSize
+      totalCount
+      items {
+        id
+        url
+        width
+        height
+      }
+    }
+  }
+`
+
+type FollowItemsData = {
+  data?: {
+    getFollowers: {
+      items: Array<{ id: number; userId: number; userName: string; createdAt: string }>
+      pagination: { pagesCount: number; page: number; pageSize: number; totalCount: number }
+    }
+    getFollowing: {
+      items: Array<{ id: number; userId: number; userName: string; createdAt: string }>
+      pagination: { pagesCount: number; page: number; pageSize: number; totalCount: number }
+    }
+  }
+}
+
 const runGraphQL = async (query: string, variables?: Record<string, unknown>) => {
   const yoga = createYoga({ schema: createServerSchema(), graphqlEndpoint: '/api/graphql' })
 
@@ -82,7 +199,9 @@ const runGraphQL = async (query: string, variables?: Record<string, unknown>) =>
     {}
   )
 
-  return response.json() as Promise<GetUsersData & { data?: { loginAdmin: { logged: boolean } } }>
+  return response.json() as Promise<
+    GetUsersData & FollowItemsData & { data?: { loginAdmin: { logged: boolean } } }
+  >
 }
 
 const runLoginAdmin = (email: string, password: string) =>
@@ -229,5 +348,130 @@ describe('removeUser resolver', () => {
 
     expect(first.data).toEqual({ removeUser: true })
     expect(second.data).toEqual({ removeUser: false })
+  })
+})
+
+describe('user detail resolvers', () => {
+  beforeEach(() => {
+    resetMockUsers()
+  })
+
+  it('returns a user with avatar profile', async () => {
+    const result = (await runGraphQL(GET_USER_QUERY, { userId: 1 })) as {
+      data?: { getUser: { userName: string; profile: { avatars: Array<{ url: string }> } } }
+    }
+
+    expect(result.data?.getUser.userName).toBe('Ivan.sr.yakimenko')
+    expect(result.data?.getUser.profile.avatars[0].url).toMatch(/pravatar\.cc/)
+  })
+
+  it('throws an error for an unknown user', async () => {
+    const result = (await runGraphQL(GET_USER_QUERY, { userId: 9999 })) as {
+      data?: { getUser?: unknown }
+      errors?: unknown[]
+    }
+
+    expect(result.data?.getUser).toBeUndefined()
+    expect(result.errors).toBeTruthy()
+  })
+
+  it('returns payments with two pages', async () => {
+    const result = (await runGraphQL(GET_PAYMENTS_BY_USER_QUERY, {
+      userId: 1,
+      pageSize: 8,
+      pageNumber: 1,
+    })) as {
+      data?: {
+        getPaymentsByUser: {
+          items: Array<{ price: number; type: string; paymentType: string }>
+          pagesCount: number
+          page: number
+          pageSize: number
+          totalCount: number
+        }
+      }
+    }
+
+    expect(result.data?.getPaymentsByUser.items).toHaveLength(8)
+    expect(result.data?.getPaymentsByUser).toMatchObject({
+      pagesCount: 2,
+      page: 1,
+      pageSize: 8,
+      totalCount: 12,
+    })
+    expect(result.data?.getPaymentsByUser.items.some((item) => item.price === 10)).toBe(true)
+    expect(result.data?.getPaymentsByUser.items.some((item) => item.price === 50)).toBe(true)
+  })
+
+  it('returns followers with pagination', async () => {
+    const result = (await runGraphQL(GET_FOLLOWERS_QUERY, {
+      userId: 1,
+      pageSize: 8,
+      pageNumber: 1,
+    })) as {
+      data?: {
+        getFollowers: {
+          items: Array<{ userName: string }>
+          pagesCount: number
+          totalCount: number
+        }
+      }
+    }
+
+    expect(result.data?.getFollowers.items).toHaveLength(8)
+    expect(result.data?.getFollowers).toMatchObject({
+      pagesCount: 2,
+      totalCount: 15,
+    })
+  })
+
+  it('sorts followers by userName', async () => {
+    const asc = (await runGraphQL(GET_FOLLOWERS_QUERY, {
+      userId: 1,
+      pageSize: 8,
+      sortBy: 'userName',
+      sortDirection: 'asc',
+    })) as { data?: { getFollowers: { items: Array<{ userName: string }> } } }
+    const desc = (await runGraphQL(GET_FOLLOWERS_QUERY, {
+      userId: 1,
+      pageSize: 8,
+      sortBy: 'userName',
+      sortDirection: 'desc',
+    })) as { data?: { getFollowers: { items: Array<{ userName: string }> } } }
+
+    expect(asc.data?.getFollowers.items[0].userName).toBe('Anna_Votakaya')
+    expect(desc.data?.getFollowers.items[0].userName).toBe('user-9')
+  })
+
+  it('returns following symmetric to followers', async () => {
+    const result = (await runGraphQL(GET_FOLLOWING_QUERY, {
+      userId: 1,
+      pageSize: 8,
+      pageNumber: 1,
+    })) as {
+      data?: {
+        getFollowing: {
+          items: Array<{ userName: string }>
+          pagesCount: number
+          totalCount: number
+        }
+      }
+    }
+
+    expect(result.data?.getFollowing.items[0].userName).toBe('user-17')
+    expect(result.data?.getFollowing).toMatchObject({
+      pagesCount: 2,
+      totalCount: 15,
+    })
+  })
+
+  it('returns twelve posts for the uploads grid', async () => {
+    const result = (await runGraphQL(GET_POSTS_BY_USER_QUERY, { userId: 1 })) as {
+      data?: { getPostsByUser: { items: Array<{ url: string }>; totalCount: number } }
+    }
+
+    expect(result.data?.getPostsByUser.items).toHaveLength(12)
+    expect(result.data?.getPostsByUser.items[0].url).toMatch(/picsum\.photos/)
+    expect(result.data?.getPostsByUser.totalCount).toBe(12)
   })
 })

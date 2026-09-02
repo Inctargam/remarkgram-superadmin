@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { GraphQLError } from 'graphql'
 import { createSchema } from 'graphql-yoga'
 
 export const ADMIN_EMAIL = 'admin@gmail.com'
@@ -14,6 +15,7 @@ type MockProfile = {
   firstName: string
   lastName: string
   createdAt: string
+  avatars?: Array<{ url: string; width: number; height: number }>
 }
 
 type MockUser = {
@@ -62,7 +64,14 @@ const buildMockUser = (
   userName,
   email: `${userName.toLowerCase()}@example.com`,
   createdAt,
-  profile: { id, userName, firstName, lastName, createdAt },
+  profile: {
+    id,
+    userName,
+    firstName,
+    lastName,
+    createdAt,
+    avatars: [{ url: `https://i.pravatar.cc/150?img=${(id % 70) + 1}`, width: 96, height: 96 }],
+  },
   userBan: BLOCKED_USER_IDS.has(id) ? { reason: 'Spam', createdAt } : undefined,
 })
 
@@ -147,16 +156,154 @@ const getUsers = (_: unknown, args: GetUsersArgs) => {
   })
 
   const totalCount = users.length
-  const pagesCount = Math.ceil(totalCount / pageSize)
+  const page = paginate(users, pageNumber, pageSize)
 
   return {
-    users: users.slice((pageNumber - 1) * pageSize, pageNumber * pageSize),
+    users: page.items,
     pagination: {
-      pagesCount,
-      page: pageNumber,
-      pageSize,
-      totalCount,
+      pagesCount: page.pagesCount,
+      page: page.page,
+      pageSize: page.pageSize,
+      totalCount: page.totalCount,
     },
+  }
+}
+
+const getUser = (_: unknown, { userId }: { userId: number }) => {
+  const user = MOCK_USERS.find((candidate) => candidate.id === userId)
+
+  if (!user) {
+    throw new GraphQLError(`User not found. Id: ${userId}`)
+  }
+
+  return user
+}
+
+type PageArgs = {
+  pageNumber?: number | null
+  pageSize?: number | null
+  sortBy?: string | null
+  sortDirection?: string | null
+}
+
+const normalizePageArgs = (args: PageArgs) => ({
+  pageNumber: args.pageNumber ?? 1,
+  pageSize: args.pageSize ?? 10,
+  sortDirection: args.sortDirection ?? 'desc',
+  sortBy: args.sortBy ?? 'createdAt',
+})
+
+const paginate = <T>(items: T[], pageNumber: number, pageSize: number) => ({
+  items: items.slice((pageNumber - 1) * pageSize, pageNumber * pageSize),
+  pagesCount: Math.ceil(items.length / pageSize),
+  page: pageNumber,
+  pageSize,
+  totalCount: items.length,
+})
+
+const PAYMENT_TYPES: Array<'STRIPE' | 'PAYPAL' | 'CREDIT_CARD'> = [
+  'STRIPE',
+  'PAYPAL',
+  'STRIPE',
+  'CREDIT_CARD',
+]
+
+const buildUserPayments = (userId: number) =>
+  Array.from({ length: 12 }, (_, index) => {
+    const weekly = index % 2 === 0
+    const createdAt = new Date(Date.UTC(2022, 11, 12 - index, 12, 0, 0)).toISOString()
+    const endDate = new Date(Date.UTC(2022, 11, 19 - index, 12, 0, 0)).toISOString()
+
+    return {
+      id: `payment-${userId}-${index + 1}`,
+      businessAccountId: 1,
+      status: 'ACTIVE',
+      dateOfPayment: createdAt,
+      startDate: createdAt,
+      endDate,
+      type: weekly ? ('WEEKLY' as const) : ('DAY' as const),
+      price: weekly ? 50 : 10,
+      paymentType: PAYMENT_TYPES[index % PAYMENT_TYPES.length],
+      payments: [],
+    }
+  })
+
+const getPaymentsByUser = (_: unknown, args: PageArgs & { userId: number }) => {
+  const { userId, ...pageArgs } = args
+  const { pageNumber, pageSize, sortBy, sortDirection } = normalizePageArgs(pageArgs)
+  const payments = buildUserPayments(userId)
+  const direction = sortDirection === 'asc' ? 1 : -1
+
+  payments.sort((a, b) => {
+    const aValue = sortBy === 'paymentType' ? a.paymentType : (a.dateOfPayment ?? '')
+    const bValue = sortBy === 'paymentType' ? b.paymentType : (b.dateOfPayment ?? '')
+
+    return aValue.localeCompare(bValue) * direction
+  })
+
+  return paginate(payments, pageNumber, pageSize)
+}
+
+const buildFollowItems = (userId: number, offset: number) => {
+  const pool = MOCK_USERS.filter((user) => user.id !== userId)
+
+  return pool.slice(offset, offset + 15).map((user, index) => ({
+    id: offset + index + 1,
+    userId: user.id,
+    userName: user.userName,
+    firstName: user.profile.firstName,
+    lastName: user.profile.lastName,
+    createdAt: user.createdAt,
+  }))
+}
+
+const getFollowers = (_: unknown, args: PageArgs & { userId: number }) => {
+  const { userId, ...pageArgs } = args
+  const { pageNumber, pageSize, sortBy, sortDirection } = normalizePageArgs(pageArgs)
+  const items = buildFollowItems(userId, 0)
+  const direction = sortDirection === 'asc' ? 1 : -1
+
+  items.sort((a, b) => {
+    const aValue = sortBy === 'userName' ? a.userName : a.createdAt
+    const bValue = sortBy === 'userName' ? b.userName : b.createdAt
+
+    return aValue.localeCompare(bValue) * direction
+  })
+
+  return paginate(items, pageNumber, pageSize)
+}
+
+const getFollowing = (_: unknown, args: PageArgs & { userId: number }) => {
+  const { userId, ...pageArgs } = args
+  const { pageNumber, pageSize, sortBy, sortDirection } = normalizePageArgs(pageArgs)
+  const items = buildFollowItems(userId, 15)
+  const direction = sortDirection === 'asc' ? 1 : -1
+
+  items.sort((a, b) => {
+    const aValue = sortBy === 'userName' ? a.userName : a.createdAt
+    const bValue = sortBy === 'userName' ? b.userName : b.createdAt
+
+    return aValue.localeCompare(bValue) * direction
+  })
+
+  return paginate(items, pageNumber, pageSize)
+}
+
+const getPostsByUser = (_: unknown, { userId }: { userId: number }) => {
+  const images = Array.from({ length: 12 }, (_, index) => ({
+    id: index + 1,
+    createdAt: MOCK_USERS.find((user) => user.id === userId)?.createdAt ?? '2022-12-12T12:00:00Z',
+    url: `https://picsum.photos/seed/u${userId}-p${index + 1}/200/200`,
+    width: 200,
+    height: 200,
+    fileSize: 200,
+  }))
+
+  return {
+    pagesCount: 1,
+    pageSize: 12,
+    totalCount: images.length,
+    items: images,
   }
 }
 
@@ -172,6 +319,11 @@ export const createServerSchema = () =>
       },
       Query: {
         getUsers,
+        getUser,
+        getPaymentsByUser,
+        getFollowers,
+        getFollowing,
+        getPostsByUser,
       },
     },
   })
