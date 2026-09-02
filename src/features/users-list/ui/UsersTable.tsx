@@ -7,6 +7,7 @@ import {
   BlockIcon,
   DropdownMenu,
   MoreHorizontalOutlineIcon,
+  PersonRemoveOutlineIcon,
   Table,
 } from '@remark-gram/ui-kit'
 
@@ -26,15 +27,22 @@ const buildUserActionItems = (
   onDeleteClick: (user: User) => void
 ): DropdownMenuItem[] => [
   {
+    id: 'delete',
+    label: 'Delete User',
+    icon: <PersonRemoveOutlineIcon aria-hidden size={24} />,
+    onSelect: () => onDeleteClick(user),
+  },
+  {
     id: 'toggle-ban',
-    label: user.userBan ? 'Unban user' : 'Ban user',
+    label: 'Ban in the system',
+    icon: <BlockIcon aria-hidden size={24} />,
     onSelect: () => {},
   },
   {
-    id: 'delete',
-    label: 'Delete user',
-    danger: true,
-    onSelect: () => onDeleteClick(user),
+    id: 'more-information',
+    label: 'More Information',
+    icon: <MoreHorizontalOutlineIcon aria-hidden size={24} />,
+    onSelect: () => onMoreInfoClick(user),
   },
 ]
 
