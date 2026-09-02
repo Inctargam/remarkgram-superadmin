@@ -1,9 +1,5 @@
-import styles from './page.module.css'
+import { UsersPage } from '@/features/users-list'
 
-export default function UsersPage() {
-  return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Users list</h1>
-    </div>
-  )
+export default function UsersPageRoute() {
+  return <UsersPage />
 }
