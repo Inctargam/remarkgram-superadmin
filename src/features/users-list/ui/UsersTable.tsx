@@ -20,7 +20,10 @@ const COLUMN_COUNT = 5
 const SKELETON_ROWS = 8
 const EMPTY_MESSAGE = 'Users not found.'
 
-const buildUserActionItems = (user: User): DropdownMenuItem[] => [
+const buildUserActionItems = (
+  user: User,
+  onDeleteClick: (user: User) => void
+): DropdownMenuItem[] => [
   {
     id: 'toggle-ban',
     label: user.userBan ? 'Unban user' : 'Ban user',
@@ -30,7 +33,7 @@ const buildUserActionItems = (user: User): DropdownMenuItem[] => [
     id: 'delete',
     label: 'Delete user',
     danger: true,
-    onSelect: () => {},
+    onSelect: () => onDeleteClick(user),
   },
 ]
 
@@ -57,10 +60,18 @@ type Props = {
   sortBy: UsersListSortField
   sortDirection: 'asc' | 'desc'
   users: User[]
+  onDeleteClick: (user: User) => void
   onToggleSort: (field: UsersListSortField) => void
 }
 
-export const UsersTable = ({ isLoading, sortBy, sortDirection, users, onToggleSort }: Props) => {
+export const UsersTable = ({
+  isLoading,
+  sortBy,
+  sortDirection,
+  users,
+  onDeleteClick,
+  onToggleSort,
+}: Props) => {
   return (
     <Table.Root className={styles.table} wrapperClassName={styles.wrapper} aria-busy={isLoading}>
       <Table.Head className={styles.head}>
@@ -104,7 +115,7 @@ export const UsersTable = ({ isLoading, sortBy, sortDirection, users, onToggleSo
             const fullName = [user.profile.firstName, user.profile.lastName]
               .filter(Boolean)
               .join(' ')
-            const actionItems = buildUserActionItems(user)
+            const actionItems = buildUserActionItems(user, onDeleteClick)
 
             return (
               <Table.Row key={user.id} className={styles.row}>

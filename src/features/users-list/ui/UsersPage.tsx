@@ -1,8 +1,12 @@
 'use client'
 
 import { Alert, Pagination } from '@remark-gram/ui-kit'
+import { useState } from 'react'
+
+import type { User } from '@/entities/user'
 
 import { useUsersList } from '../model/useUsersList'
+import { DeleteUserDialog } from './DeleteUserDialog'
 import styles from './usersPage.module.css'
 import { UsersTable } from './UsersTable'
 import { UsersToolbar } from './UsersToolbar'
@@ -10,6 +14,7 @@ import { UsersToolbar } from './UsersToolbar'
 const ITEMS_PER_PAGE_OPTIONS = [8, 16, 32, 64]
 
 export const UsersPage = () => {
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const {
     users,
     totalPages,
@@ -28,6 +33,12 @@ export const UsersPage = () => {
     toggleSortBy,
   } = useUsersList()
 
+  const closeDeleteDialog = (open: boolean) => {
+    if (!open) {
+      setDeleteTarget(null)
+    }
+  }
+
   return (
     <div className={styles.page}>
       {errorMessage ? (
@@ -45,6 +56,7 @@ export const UsersPage = () => {
             sortBy={sortBy}
             sortDirection={sortDirection}
             users={users}
+            onDeleteClick={setDeleteTarget}
             onToggleSort={toggleSortBy}
           />
           <Pagination
@@ -57,6 +69,14 @@ export const UsersPage = () => {
           />
         </>
       )}
+
+      {deleteTarget ? (
+        <DeleteUserDialog
+          open={Boolean(deleteTarget)}
+          user={deleteTarget}
+          onOpenChange={closeDeleteDialog}
+        />
+      ) : null}
     </div>
   )
 }

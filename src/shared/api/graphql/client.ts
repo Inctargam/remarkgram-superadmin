@@ -142,3 +142,15 @@ export const getUsers = async (input: GetUsersInput = {}): Promise<UsersPaginati
 
   return data.getUsers
 }
+
+const REMOVE_USER_MUTATION = /* GraphQL */ `
+  mutation RemoveUser($userId: Int!) {
+    removeUser(userId: $userId)
+  }
+`
+
+export const removeUser = async (userId: number): Promise<boolean> => {
+  const data = await graphqlRequest<{ removeUser: boolean }>(REMOVE_USER_MUTATION, { userId })
+
+  return data.removeUser
+}
