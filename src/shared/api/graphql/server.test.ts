@@ -1,7 +1,7 @@
 import { createYoga } from 'graphql-yoga'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { ADMIN_EMAIL, ADMIN_PASSWORD, createServerSchema } from './server'
+import { ADMIN_EMAIL, ADMIN_PASSWORD, createServerSchema, resetMockUsers } from './server'
 
 const LOGIN_ADMIN_QUERY = /* GraphQL */ `
   mutation LoginAdmin($email: String!, $password: String!) {
@@ -90,6 +90,14 @@ const runLoginAdmin = (email: string, password: string) =>
 
 const runGetUsers = (variables: Record<string, unknown>) => runGraphQL(GET_USERS_QUERY, variables)
 
+const REMOVE_USER_MUTATION = /* GraphQL */ `
+  mutation RemoveUser($userId: Int!) {
+    removeUser(userId: $userId)
+  }
+`
+
+const runRemoveUser = (userId: number) => runGraphQL(REMOVE_USER_MUTATION, { userId })
+
 describe('loginAdmin resolver', () => {
   it('logs in the admin with hardcoded credentials', async () => {
     const result = await runLoginAdmin(ADMIN_EMAIL, ADMIN_PASSWORD)
@@ -117,6 +125,10 @@ describe('loginAdmin resolver', () => {
 })
 
 describe('getUsers resolver', () => {
+  beforeEach(() => {
+    resetMockUsers()
+  })
+
   it('returns 8 users with 10 pages for the first page ordered by createdAt desc', async () => {
     const result = await runGetUsers({ pageNumber: 1, pageSize: 8 })
 
@@ -186,5 +198,36 @@ describe('getUsers resolver', () => {
     expect(result.data?.getUsers.users).toHaveLength(10)
     expect(result.data?.getUsers.pagination.pageSize).toBe(10)
     expect(result.data?.getUsers.pagination.totalCount).toBe(80)
+  })
+})
+
+describe('removeUser resolver', () => {
+  beforeEach(() => {
+    resetMockUsers()
+  })
+
+  it('removes the user and reports it in the listing', async () => {
+    const removal = await runRemoveUser(1)
+
+    expect(removal.data).toEqual({ removeUser: true })
+
+    const result = await runGetUsers({ pageNumber: 1, pageSize: 8 })
+
+    expect(result.data?.getUsers.users.some((user) => user.id === 1)).toBe(false)
+    expect(result.data?.getUsers.pagination.totalCount).toBe(79)
+  })
+
+  it('returns false for an unknown user id', async () => {
+    const result = await runRemoveUser(9999)
+
+    expect(result.data).toEqual({ removeUser: false })
+  })
+
+  it('returns false when the user was already removed', async () => {
+    const first = await runRemoveUser(1)
+    const second = await runRemoveUser(1)
+
+    expect(first.data).toEqual({ removeUser: true })
+    expect(second.data).toEqual({ removeUser: false })
   })
 })

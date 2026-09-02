@@ -77,12 +77,32 @@ const GENERATED_USERS: MockUser[] = Array.from({ length: 72 }, (_, index) => {
   )
 })
 
-const MOCK_USERS: MockUser[] = [
+const buildMockUsers = (): MockUser[] => [
   ...DESIGN_USERS.map((designUser, index) =>
     buildMockUser(index + 1, designUser, DESIGN_CREATED_ATS[index])
   ),
   ...GENERATED_USERS,
 ]
+
+const MOCK_USERS: MockUser[] = buildMockUsers()
+
+/** Restores the seed after mutating operations — for tests and dev reloads. */
+export const resetMockUsers = () => {
+  MOCK_USERS.length = 0
+  MOCK_USERS.push(...buildMockUsers())
+}
+
+const removeUser = (_: unknown, { userId }: { userId: number }) => {
+  const index = MOCK_USERS.findIndex((user) => user.id === userId)
+
+  if (index === -1) {
+    return false
+  }
+
+  MOCK_USERS.splice(index, 1)
+
+  return true
+}
 
 type GetUsersArgs = {
   pageNumber?: number | null
@@ -148,6 +168,7 @@ export const createServerSchema = () =>
         loginAdmin: (_: unknown, { email, password }: { email: string; password: string }) => ({
           logged: email === ADMIN_EMAIL && password === ADMIN_PASSWORD,
         }),
+        removeUser,
       },
       Query: {
         getUsers,
