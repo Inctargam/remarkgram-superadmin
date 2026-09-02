@@ -82,6 +82,7 @@ export type User = {
     firstName: string | null
     lastName: string | null
     createdAt: string
+    avatars?: Array<{ url: string; width: number; height: number }> | null
   }
   userBan: UserBan | null
 }
@@ -153,4 +154,251 @@ export const removeUser = async (userId: number): Promise<boolean> => {
   const data = await graphqlRequest<{ removeUser: boolean }>(REMOVE_USER_MUTATION, { userId })
 
   return data.removeUser
+}
+
+export type SubscriptionByPaymentModel = {
+  id: string
+  businessAccountId: number
+  status: 'PENDING' | 'ACTIVE' | 'FINISHED' | 'DELETED'
+  dateOfPayment: string | null
+  startDate: string | null
+  endDate: string | null
+  type: 'MONTHLY' | 'DAY' | 'WEEKLY'
+  price: number | null
+  paymentType: 'STRIPE' | 'PAYPAL' | 'CREDIT_CARD' | null
+}
+
+export type PaymentPaginationModel = {
+  items: SubscriptionByPaymentModel[]
+  pagesCount: number
+  page: number
+  pageSize: number
+  totalCount: number
+}
+
+export type GetPaymentsByUserInput = {
+  userId: number
+  pageNumber?: number
+  pageSize?: number
+  sortBy?: 'dateOfPayment' | 'paymentType' | 'status' | 'createdAt'
+  sortDirection?: SortDirection
+}
+
+const GET_PAYMENTS_BY_USER_QUERY = /* GraphQL */ `
+  query GetPaymentsByUser(
+    $userId: Int!
+    $pageNumber: Int
+    $pageSize: Int
+    $sortBy: String
+    $sortDirection: SortDirection
+  ) {
+    getPaymentsByUser(
+      userId: $userId
+      pageNumber: $pageNumber
+      pageSize: $pageSize
+      sortBy: $sortBy
+      sortDirection: $sortDirection
+    ) {
+      items {
+        id
+        status
+        dateOfPayment
+        endDate
+        type
+        price
+        paymentType
+      }
+      pagesCount
+      page
+      pageSize
+      totalCount
+    }
+  }
+`
+
+export const getPaymentsByUser = async (
+  input: GetPaymentsByUserInput
+): Promise<PaymentPaginationModel> => {
+  const data = await graphqlRequest<{ getPaymentsByUser: PaymentPaginationModel }>(
+    GET_PAYMENTS_BY_USER_QUERY,
+    input
+  )
+
+  return data.getPaymentsByUser
+}
+
+export type Follow = {
+  id: number
+  userId: number
+  userName: string | null
+  firstName: string | null
+  lastName: string | null
+  createdAt: string
+}
+
+export type FollowPaginationModel = {
+  items: Follow[]
+  pagesCount: number
+  page: number
+  pageSize: number
+  totalCount: number
+}
+
+export type FollowListInput = {
+  userId: number
+  pageNumber?: number
+  pageSize?: number
+  sortBy?: 'userName' | 'createdAt'
+  sortDirection?: SortDirection
+}
+
+const GET_FOLLOWERS_QUERY = /* GraphQL */ `
+  query GetFollowers(
+    $userId: Int!
+    $pageNumber: Int
+    $pageSize: Int
+    $sortBy: String
+    $sortDirection: SortDirection
+  ) {
+    getFollowers(
+      userId: $userId
+      pageNumber: $pageNumber
+      pageSize: $pageSize
+      sortBy: $sortBy
+      sortDirection: $sortDirection
+    ) {
+      items {
+        id
+        userId
+        userName
+        firstName
+        lastName
+        createdAt
+      }
+      pagesCount
+      page
+      pageSize
+      totalCount
+    }
+  }
+`
+
+const GET_FOLLOWING_QUERY = /* GraphQL */ `
+  query GetFollowing(
+    $userId: Int!
+    $pageNumber: Int
+    $pageSize: Int
+    $sortBy: String
+    $sortDirection: SortDirection
+  ) {
+    getFollowing(
+      userId: $userId
+      pageNumber: $pageNumber
+      pageSize: $pageSize
+      sortBy: $sortBy
+      sortDirection: $sortDirection
+    ) {
+      items {
+        id
+        userId
+        userName
+        firstName
+        lastName
+        createdAt
+      }
+      pagesCount
+      page
+      pageSize
+      totalCount
+    }
+  }
+`
+
+export const getFollowers = async (input: FollowListInput): Promise<FollowPaginationModel> => {
+  const data = await graphqlRequest<{ getFollowers: FollowPaginationModel }>(
+    GET_FOLLOWERS_QUERY,
+    input
+  )
+
+  return data.getFollowers
+}
+
+export const getFollowing = async (input: FollowListInput): Promise<FollowPaginationModel> => {
+  const data = await graphqlRequest<{ getFollowing: FollowPaginationModel }>(
+    GET_FOLLOWING_QUERY,
+    input
+  )
+
+  return data.getFollowing
+}
+
+export type ImagePost = {
+  id: number | null
+  createdAt: string | null
+  url: string | null
+  width: number | null
+  height: number | null
+}
+
+export type PostsByUserModel = {
+  pagesCount: number
+  pageSize: number
+  totalCount: number
+  items: ImagePost[] | null
+}
+
+const GET_USER_QUERY = /* GraphQL */ `
+  query GetUser($userId: Int!) {
+    getUser(userId: $userId) {
+      id
+      userName
+      createdAt
+      profile {
+        id
+        userName
+        firstName
+        lastName
+        createdAt
+        avatars {
+          url
+          width
+          height
+        }
+      }
+      userBan {
+        reason
+        createdAt
+      }
+    }
+  }
+`
+
+export const getUser = async (userId: number): Promise<User> => {
+  const data = await graphqlRequest<{ getUser: User }>(GET_USER_QUERY, { userId })
+
+  return data.getUser
+}
+
+const GET_POSTS_BY_USER_QUERY = /* GraphQL */ `
+  query GetPostsByUser($userId: Int!) {
+    getPostsByUser(userId: $userId) {
+      pagesCount
+      pageSize
+      totalCount
+      items {
+        id
+        url
+        width
+        height
+      }
+    }
+  }
+`
+
+export const getPostsByUser = async (userId: number): Promise<PostsByUserModel> => {
+  const data = await graphqlRequest<{ getPostsByUser: PostsByUserModel }>(GET_POSTS_BY_USER_QUERY, {
+    userId,
+  })
+
+  return data.getPostsByUser
 }
