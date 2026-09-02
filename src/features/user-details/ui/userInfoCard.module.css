@@ -1,0 +1,54 @@
+.card {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.names {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 16px;
+}
+
+.name {
+  color: var(--color-text-primary);
+  font-size: 20px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 24px;
+}
+
+.username {
+  color: var(--color-dark-100);
+  font-size: var(--font-size-body);
+  line-height: 24px;
+}
+
+.info {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 24px;
+  margin-left: 56px;
+}
+
+.pair {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  color: var(--color-dark-100);
+  font-size: var(--font-size-body);
+  line-height: 24px;
+}
+
+.value {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-body);
+  line-height: 24px;
+}

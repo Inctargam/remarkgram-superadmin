@@ -22,6 +22,7 @@ const EMPTY_MESSAGE = 'Users not found.'
 
 const buildUserActionItems = (
   user: User,
+  onMoreInfoClick: (user: User) => void,
   onDeleteClick: (user: User) => void
 ): DropdownMenuItem[] => [
   {
@@ -61,6 +62,7 @@ type Props = {
   sortDirection: 'asc' | 'desc'
   users: User[]
   onDeleteClick: (user: User) => void
+  onMoreInfoClick: (user: User) => void
   onToggleSort: (field: UsersListSortField) => void
 }
 
@@ -70,6 +72,7 @@ export const UsersTable = ({
   sortDirection,
   users,
   onDeleteClick,
+  onMoreInfoClick,
   onToggleSort,
 }: Props) => {
   return (
@@ -115,7 +118,7 @@ export const UsersTable = ({
             const fullName = [user.profile.firstName, user.profile.lastName]
               .filter(Boolean)
               .join(' ')
-            const actionItems = buildUserActionItems(user, onDeleteClick)
+            const actionItems = buildUserActionItems(user, onMoreInfoClick, onDeleteClick)
 
             return (
               <Table.Row key={user.id} className={styles.row}>

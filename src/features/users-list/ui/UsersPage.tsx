@@ -1,6 +1,7 @@
 'use client'
 
 import { Alert, Pagination } from '@remark-gram/ui-kit'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import type { User } from '@/entities/user'
@@ -14,6 +15,7 @@ import { UsersToolbar } from './UsersToolbar'
 const ITEMS_PER_PAGE_OPTIONS = [8, 16, 32, 64]
 
 export const UsersPage = () => {
+  const router = useRouter()
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const {
     users,
@@ -57,6 +59,7 @@ export const UsersPage = () => {
             sortDirection={sortDirection}
             users={users}
             onDeleteClick={setDeleteTarget}
+            onMoreInfoClick={(user) => router.push(`/users/${user.id}`)}
             onToggleSort={toggleSortBy}
           />
           <Pagination
