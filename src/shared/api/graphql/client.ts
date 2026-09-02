@@ -52,3 +52,93 @@ export const loginAdmin = async (input: LoginAdminInput): Promise<boolean> => {
 
   return data.loginAdmin.logged
 }
+
+export type SortDirection = 'asc' | 'desc'
+
+export type UserBlockStatus = 'ALL' | 'BLOCKED' | 'UNBLOCKED'
+
+export type GetUsersInput = {
+  pageNumber?: number
+  pageSize?: number
+  sortBy?: 'userName' | 'createdAt'
+  sortDirection?: SortDirection
+  searchTerm?: string
+  statusFilter?: UserBlockStatus
+}
+
+export type UserBan = {
+  reason: string
+  createdAt: string
+}
+
+export type User = {
+  id: number
+  userName: string
+  email: string
+  createdAt: string
+  profile: {
+    id: number
+    userName: string
+    firstName: string | null
+    lastName: string | null
+    createdAt: string
+  }
+  userBan: UserBan | null
+}
+
+export type UsersPaginationModel = {
+  users: User[]
+  pagination: {
+    pagesCount: number
+    page: number
+    pageSize: number
+    totalCount: number
+  }
+}
+
+const GET_USERS_QUERY = /* GraphQL */ `
+  query GetUsers(
+    $pageNumber: Int
+    $pageSize: Int
+    $sortBy: String
+    $sortDirection: SortDirection
+    $searchTerm: String
+    $statusFilter: UserBlockStatus
+  ) {
+    getUsers(
+      pageNumber: $pageNumber
+      pageSize: $pageSize
+      sortBy: $sortBy
+      sortDirection: $sortDirection
+      searchTerm: $searchTerm
+      statusFilter: $statusFilter
+    ) {
+      users {
+        id
+        userName
+        createdAt
+        profile {
+          id
+          firstName
+          lastName
+        }
+        userBan {
+          reason
+          createdAt
+        }
+      }
+      pagination {
+        pagesCount
+        page
+        pageSize
+        totalCount
+      }
+    }
+  }
+`
+
+export const getUsers = async (input: GetUsersInput = {}): Promise<UsersPaginationModel> => {
+  const data = await graphqlRequest<{ getUsers: UsersPaginationModel }>(GET_USERS_QUERY, input)
+
+  return data.getUsers
+}
