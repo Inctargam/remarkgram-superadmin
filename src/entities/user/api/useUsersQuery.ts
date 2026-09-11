@@ -1,17 +1,23 @@
 'use client'
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@apollo/client/react'
 
-import type { GetUsersInput, UsersPaginationModel } from '@/shared/api/graphql/client'
-import { getUsers } from '@/shared/api/graphql/client'
+import type { GetUsersQueryVariables } from '@/shared/api/graphql/__generated__/graphql'
 
-import { usersQueryKeys } from './queryKeys'
+import { GetUsersDocument } from './documents'
 
 export const USERS_PAGE_SIZE = 8
 
-export const useUsersQuery = (input: GetUsersInput) =>
-  useQuery<UsersPaginationModel>({
-    queryKey: usersQueryKeys.list(input),
-    queryFn: () => getUsers(input),
-    placeholderData: keepPreviousData,
+export const useUsersQuery = (input: GetUsersQueryVariables) => {
+  const { data, previousData, ...result } = useQuery(GetUsersDocument, {
+    variables: input,
+    notifyOnNetworkStatusChange: true,
+    ssr: false,
   })
+
+  return {
+    ...result,
+    data: data?.getUsers,
+    previousData: previousData?.getUsers,
+  }
+}

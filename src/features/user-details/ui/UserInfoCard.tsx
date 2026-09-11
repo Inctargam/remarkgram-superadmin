@@ -1,12 +1,12 @@
 'use client'
 
-import type { User } from '@/entities/user'
+import type { UserDetails } from '@/entities/user'
 import { formatShortDate } from '@/shared/lib/date'
 
 import styles from './userInfoCard.module.css'
 
 type Props = {
-  user: User
+  user: UserDetails
 }
 
 export const UserInfoCard = ({ user }: Props) => {

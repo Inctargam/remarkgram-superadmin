@@ -3,7 +3,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
-import { QueryProvider } from '@/providers/QueryProvider'
+import { ApolloProvider } from '@/providers/ApolloProvider'
 import { AppShell } from '@/widgets/app-shell'
 
 export const metadata: Metadata = {
@@ -15,9 +15,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <QueryProvider>
+        <ApolloProvider>
           <AppShell>{children}</AppShell>
-        </QueryProvider>
+        </ApolloProvider>
       </body>
     </html>
   )

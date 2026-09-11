@@ -6,3 +6,4 @@ build
 coverage
 *.log
 pnpm-lock.yaml
+src/shared/api/graphql/__generated__

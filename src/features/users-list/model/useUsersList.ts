@@ -115,7 +115,7 @@ export const useUsersList = (): UsersListState => {
     return () => clearTimeout(timer)
   }, [searchValue])
 
-  const { data, error, isPending } = useUsersQuery({
+  const { data, error, loading, previousData } = useUsersQuery({
     pageNumber: page,
     pageSize,
     searchTerm: debouncedSearchValue || undefined,
@@ -123,6 +123,10 @@ export const useUsersList = (): UsersListState => {
     sortDirection,
     statusFilter,
   })
+
+  // Apollo keeps the last result in `previousData` while the next page loads,
+  // which mirrors TanStack's `keepPreviousData` behavior.
+  const result = data ?? previousData
 
   // Search, filter and sort changes restart the walk from the first page. The page
   // parameter itself is deliberately absent: paging must not reset the page.
@@ -151,15 +155,15 @@ export const useUsersList = (): UsersListState => {
 
   return {
     errorMessage: error ? LOAD_ERROR_MESSAGE : null,
-    isLoading: isPending,
+    isLoading: loading && !result,
     page,
     pageSize,
     searchValue,
     sortBy,
     sortDirection,
     statusFilter,
-    totalPages: data?.pagination.pagesCount ?? 0,
-    users: data?.users ?? [],
+    totalPages: result?.pagination.pagesCount ?? 0,
+    users: result?.users ?? [],
     changePageSize,
     changeSearchValue,
     changeStatusFilter,

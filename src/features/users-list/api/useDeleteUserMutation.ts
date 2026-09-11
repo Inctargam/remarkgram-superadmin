@@ -1,18 +1,15 @@
 'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@apollo/client/react'
 
-import { usersQueryKeys } from '@/entities/user'
-import { removeUser } from '@/shared/api/graphql/client'
+import { RemoveUserDocument } from './documents'
 
-/** UC-3: the user is removed, then the users table is refetched. */
+/** UC-3: the user is removed, then the active users list is refetched. */
 export const useDeleteUserMutation = (userId: number) => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: () => removeUser(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: usersQueryKeys.root })
-    },
+  const [mutate, result] = useMutation(RemoveUserDocument, {
+    variables: { userId },
+    refetchQueries: ['GetUsers'],
   })
+
+  return { mutate, ...result }
 }

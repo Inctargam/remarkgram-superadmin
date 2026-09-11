@@ -1,7 +1,6 @@
 'use client'
 
-import type { PostsByUserModel } from '@/shared/api/graphql/client'
-
+import type { PostsByUserModel } from '../api/usePostsByUserQuery'
 import styles from './uploadsPanel.module.css'
 
 type Props = {

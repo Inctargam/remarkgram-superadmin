@@ -1,20 +1,30 @@
 'use client'
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@apollo/client/react'
 
-import type { FollowListInput, FollowPaginationModel } from '@/shared/api/graphql/client'
-import { getFollowers, getFollowing } from '@/shared/api/graphql/client'
+import type {
+  GetFollowersQueryVariables,
+  GetFollowingQueryVariables,
+} from '@/shared/api/graphql/__generated__/graphql'
 
-import { followQueryKeys } from './queryKeys'
+import { GetFollowersDocument, GetFollowingDocument } from './documents'
 
-export type FollowListKind = 'followers' | 'following'
-
-export const useFollowListQuery = (kind: FollowListKind, input: FollowListInput) => {
-  const isFollowers = kind === 'followers'
-
-  return useQuery<FollowPaginationModel>({
-    queryKey: followQueryKeys.list(kind, input),
-    queryFn: () => (isFollowers ? getFollowers(input) : getFollowing(input)),
-    placeholderData: keepPreviousData,
+export const useFollowersQuery = (input: GetFollowersQueryVariables) => {
+  const { data, ...result } = useQuery(GetFollowersDocument, {
+    variables: input,
+    notifyOnNetworkStatusChange: true,
+    ssr: false,
   })
+
+  return { ...result, data: data?.getFollowers }
+}
+
+export const useFollowingQuery = (input: GetFollowingQueryVariables) => {
+  const { data, ...result } = useQuery(GetFollowingDocument, {
+    variables: input,
+    notifyOnNetworkStatusChange: true,
+    ssr: false,
+  })
+
+  return { ...result, data: data?.getFollowing }
 }

@@ -1,16 +1,14 @@
 'use client'
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { skipToken, useQuery } from '@apollo/client/react'
 
-import type { User } from '@/shared/api/graphql/client'
-import { getUser } from '@/shared/api/graphql/client'
+import { GetUserDocument } from './documents'
 
-import { usersQueryKeys } from './queryKeys'
+export const useUserQuery = (userId: number) => {
+  const { data, ...result } = useQuery(
+    GetUserDocument,
+    Number.isInteger(userId) && userId > 0 ? { variables: { userId }, ssr: false } : skipToken
+  )
 
-export const useUserQuery = (userId: number) =>
-  useQuery<User>({
-    queryKey: usersQueryKeys.detail(userId),
-    queryFn: () => getUser(userId),
-    placeholderData: keepPreviousData,
-    enabled: Number.isInteger(userId) && userId > 0,
-  })
+  return { ...result, data: data?.getUser }
+}
