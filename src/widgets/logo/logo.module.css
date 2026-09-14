@@ -1,0 +1,6 @@
+.suffix {
+  margin-left: 4px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-small);
+  line-height: 1;
+}

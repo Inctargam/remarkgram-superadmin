@@ -1,0 +1,307 @@
+type PaginationModel {
+  pagesCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalCount: Int!
+}
+
+type Follow {
+  id: Int!
+  userId: Int!
+  userName: String
+  firstName: String
+  lastName: String
+  createdAt: DateTime!
+}
+
+# A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+scalar DateTime
+
+type Avatar {
+  url: String
+  width: Int
+  height: Int
+  fileSize: Int
+}
+
+type PostOwnerModel {
+  id: Int!
+  userName: String!
+  firstName: String
+  lastName: String
+  avatars: [Avatar!]
+}
+
+type Profile {
+  id: Int!
+  userName: String
+  firstName: String
+  lastName: String
+  city: String
+  country: String
+  region: String
+  dateOfBirth: DateTime
+  aboutMe: String
+  createdAt: DateTime!
+  avatars: [Avatar!]
+}
+
+type UserBan {
+  reason: String!
+  createdAt: DateTime!
+}
+
+type User {
+  id: Int!
+  userName: String!
+  email: String!
+  createdAt: DateTime!
+  profile: Profile!
+  userBan: UserBan
+}
+
+type UsersPaginationModel {
+  users: [User!]!
+  pagination: PaginationModel!
+}
+
+type FollowPaginationModel {
+  pagesCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalCount: Int!
+  items: [Follow!]!
+}
+
+type LoginAdmin {
+  logged: Boolean!
+}
+
+type Payment {
+  id: Int
+  userId: Int
+  paymentMethod: PaymentMethod
+  amount: Int
+  currency: CurrencyType
+  createdAt: DateTime
+  endDate: DateTime
+  type: SubscriptionType
+}
+
+enum PaymentMethod {
+  STRIPE
+  PAYPAL
+  CREDIT_CARD
+}
+
+enum CurrencyType {
+  USD
+  EUR
+}
+
+enum SubscriptionType {
+  MONTHLY
+  DAY
+  WEEKLY
+}
+
+type SubscriptionPaymentsModel {
+  id: Int
+  userId: Int
+  paymentMethod: PaymentMethod!
+  amount: Int
+  currency: CurrencyType
+  createdAt: DateTime
+  endDate: DateTime
+  type: SubscriptionType!
+  userName: String!
+  avatars: [Avatar!]
+}
+
+type PaymentsPaginationModel {
+  pagesCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalCount: Int!
+  items: [SubscriptionPaymentsModel!]!
+}
+
+type SubscriptionByPaymentModel {
+  id: String!
+  businessAccountId: Int!
+  status: StatusSubscriptionType!
+  dateOfPayment: DateTime
+  startDate: DateTime
+  endDate: DateTime
+  type: SubscriptionType!
+  price: Int!
+  paymentType: PaymentMethod
+  payments: [Payment!]!
+}
+
+enum StatusSubscriptionType {
+  PENDING
+  ACTIVE
+  FINISHED
+  DELETED
+}
+
+type PaymentPaginationModel {
+  pagesCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalCount: Int!
+  items: [SubscriptionByPaymentModel!]!
+}
+
+type ImagePost {
+  id: Int
+  createdAt: DateTime
+  url: String
+  width: Int
+  height: Int
+  fileSize: Int
+}
+
+type Post {
+  images: [ImagePost!]
+  id: Int!
+  ownerId: Int!
+  description: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  postOwner: PostOwnerModel!
+  userBan: UserBan
+}
+
+type PostsPaginationModel {
+  pagesCount: Int!
+  pageSize: Int!
+  totalCount: Int!
+  items: [Post!]!
+}
+
+type PostsByUserModel {
+  pagesCount: Int!
+  pageSize: Int!
+  totalCount: Int!
+  items: [ImagePost!]
+}
+
+type Query {
+  getUser(userId: Int!): User!
+  getUsers(
+    pageSize: Int = 10
+    pageNumber: Int = 1
+
+    # Sorting occurs by the userName field or the createdAt field.
+    sortBy: String = "createdAt"
+
+    # Sorting management. Accepts only 'asc' or 'desc' values. Default: 'desc'..
+    sortDirection: SortDirection = desc
+
+    # Search by userName field
+    searchTerm: String
+
+    # Filter by user status
+    statusFilter: UserBlockStatus = ALL
+  ): UsersPaginationModel!
+  getFollowers(
+    pageSize: Int = 10
+    pageNumber: Int = 1
+
+    # Sorting occurs by the userName field or the createdAt field.
+    sortBy: String = "createdAt"
+
+    # Sorting management. Accepts only 'asc' or 'desc' values. Default: 'desc'..
+    sortDirection: SortDirection = desc
+    userId: Int!
+  ): FollowPaginationModel!
+  getFollowing(
+    pageSize: Int = 10
+    pageNumber: Int = 1
+
+    # Sorting occurs by the userName field or the createdAt field.
+    sortBy: String = "createdAt"
+
+    # Sorting management. Accepts only 'asc' or 'desc' values. Default: 'desc'..
+    sortDirection: SortDirection = desc
+    userId: Int!
+  ): FollowPaginationModel!
+  getPaymentsByUser(
+    userId: Int!
+    pageSize: Int = 10
+    pageNumber: Int = 1
+
+    # Сan sort by the following fields: dateOfPayment, paymentType, status, createdAt
+    sortBy: String = "createdAt"
+
+    # Sorting management. Accepts only 'asc' or 'desc' values. Default: 'desc'..
+    sortDirection: SortDirection = desc
+  ): PaymentPaginationModel!
+  getPayments(
+    pageSize: Int = 10
+    pageNumber: Int = 1
+
+    # Сan sort by the following fields: createdAt, paymentMethod, amount, userName. Default: createdAt
+    sortBy: String = "createdAt"
+
+    # Sorting management. Accepts only 'asc' or 'desc' values. Default: 'desc'..
+    sortDirection: SortDirection = desc
+
+    # Search by userName field
+    searchTerm: String
+  ): PaymentsPaginationModel!
+  getPostsByUser(
+    userId: Int!
+
+    # ID of the last uploaded post. If endCursorPostId not provided, the first set of posts is returned.
+    endCursorId: Int
+  ): PostsByUserModel!
+  getPosts(
+    # ID of the last uploaded post. If endCursorPostId not provided, the first set of posts is returned.
+    endCursorPostId: Int
+
+    # Search by userName field
+    searchTerm: String
+    pageSize: Int = 10
+
+    # Sorting occurs by the createdAt field.
+    sortBy: String = "createdAt"
+
+    # Sorting management. Accepts only 'asc' or 'desc' values. Default: 'desc'..
+    sortDirection: SortDirection = desc
+  ): PostsPaginationModel!
+}
+
+enum SortDirection {
+  asc
+  desc
+}
+
+enum UserBlockStatus {
+  ALL
+  BLOCKED
+  UNBLOCKED
+}
+
+type Mutation {
+  loginAdmin(
+    # Email of the admin "admin@gmail.com"
+    email: String!
+
+    # Password of the admin "admin"
+    password: String!
+  ): LoginAdmin!
+  banUser(
+    # Reason for ban.
+    banReason: String!
+    userId: Int!
+  ): Boolean!
+  unbanUser(userId: Int!): Boolean!
+  removeUser(userId: Int!): Boolean!
+}
+
+type Subscription {
+  postAdded: Post!
+}
