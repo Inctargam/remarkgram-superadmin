@@ -21,11 +21,11 @@ type Props = {
 }
 
 export const DeleteUserDialog = ({ open, user, onOpenChange }: Props) => {
-  const { error, isPending, mutate } = useDeleteUserMutation(user.id)
+  const { error, loading, mutate } = useDeleteUserMutation(user.id)
 
   const confirmHandler = () => {
-    mutate(undefined, {
-      onSuccess: () => {
+    mutate({
+      onCompleted: () => {
         onOpenChange(false)
       },
     })
@@ -34,7 +34,7 @@ export const DeleteUserDialog = ({ open, user, onOpenChange }: Props) => {
   // While the request is in flight the confirmation stays put, otherwise a failed
   // deletion would have nowhere to be reported.
   const openChangeHandler = (nextOpen: boolean) => {
-    if (!nextOpen && isPending) {
+    if (!nextOpen && loading) {
       return
     }
 
@@ -61,7 +61,7 @@ export const DeleteUserDialog = ({ open, user, onOpenChange }: Props) => {
       message={message}
       confirmLabel="Yes"
       cancelLabel="No"
-      confirmDisabled={isPending}
+      confirmDisabled={loading}
       // The deletion is asynchronous: the dialog closes in `onSuccess`, not on the click.
       closeOnConfirm={false}
       onConfirm={confirmHandler}

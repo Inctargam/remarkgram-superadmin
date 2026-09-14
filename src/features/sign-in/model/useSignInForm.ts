@@ -1,9 +1,11 @@
+import { useMutation } from '@apollo/client/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 
-import { loginAdmin } from '@/shared/api/graphql/client'
 import { sessionStore } from '@/shared/auth'
+
+import { LoginAdminDocument } from '../api/documents'
 
 type SignInFormValues = {
   email: string
@@ -15,6 +17,7 @@ const INVALID_CREDENTIALS_MSG = 'Invalid email or password'
 export const useSignInForm = () => {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loginAdmin] = useMutation(LoginAdminDocument)
 
   const {
     register,
@@ -35,7 +38,10 @@ export const useSignInForm = () => {
     setIsSubmitting(true)
 
     try {
-      const logged = await loginAdmin({ email: data.email, password: data.password })
+      const { data: result } = await loginAdmin({
+        variables: { email: data.email, password: data.password },
+      })
+      const logged = result?.loginAdmin.logged ?? false
 
       if (logged) {
         sessionStore.getState().setAuthenticated('admin-access-token')

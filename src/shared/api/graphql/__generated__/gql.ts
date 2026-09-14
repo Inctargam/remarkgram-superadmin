@@ -1,0 +1,88 @@
+/* eslint-disable */
+import * as types from './graphql';
+import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+
+/**
+ * Map of all GraphQL operations in the project.
+ *
+ * This map has several performance disadvantages:
+ * 1. It is not tree-shakeable, so it will include all operations in the project.
+ * 2. It is not minifiable, so the string of a GraphQL query will be multiple times inside the bundle.
+ * 3. It does not support dead code elimination, so it will add unused operations.
+ *
+ * Therefore it is highly recommended to use the babel or swc plugin for production.
+ * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
+ */
+type Documents = {
+    "\n  query GetFollowers(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowers(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n": typeof types.GetFollowersDocument,
+    "\n  query GetFollowing(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowing(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n": typeof types.GetFollowingDocument,
+    "\n  query GetPaymentsByUser(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getPaymentsByUser(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        status\n        dateOfPayment\n        endDate\n        type\n        price\n        paymentType\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n": typeof types.GetPaymentsByUserDocument,
+    "\n  query GetUsers(\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n    $searchTerm: String\n    $statusFilter: UserBlockStatus\n  ) {\n    getUsers(\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n      searchTerm: $searchTerm\n      statusFilter: $statusFilter\n    ) {\n      users {\n        id\n        userName\n        createdAt\n        profile {\n          id\n          firstName\n          lastName\n        }\n        userBan {\n          reason\n          createdAt\n        }\n      }\n      pagination {\n        pagesCount\n        page\n        pageSize\n        totalCount\n      }\n    }\n  }\n": typeof types.GetUsersDocument,
+    "\n  query GetUser($userId: Int!) {\n    getUser(userId: $userId) {\n      id\n      userName\n      createdAt\n      profile {\n        id\n        userName\n        firstName\n        lastName\n        createdAt\n        avatars {\n          url\n          width\n          height\n        }\n      }\n      userBan {\n        reason\n        createdAt\n      }\n    }\n  }\n": typeof types.GetUserDocument,
+    "\n  mutation LoginAdmin($email: String!, $password: String!) {\n    loginAdmin(email: $email, password: $password) {\n      logged\n    }\n  }\n": typeof types.LoginAdminDocument,
+    "\n  query GetPostsByUser($userId: Int!) {\n    getPostsByUser(userId: $userId) {\n      pagesCount\n      pageSize\n      totalCount\n      items {\n        id\n        url\n        width\n        height\n      }\n    }\n  }\n": typeof types.GetPostsByUserDocument,
+    "\n  mutation RemoveUser($userId: Int!) {\n    removeUser(userId: $userId)\n  }\n": typeof types.RemoveUserDocument,
+};
+const documents: Documents = {
+    "\n  query GetFollowers(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowers(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n": types.GetFollowersDocument,
+    "\n  query GetFollowing(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowing(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n": types.GetFollowingDocument,
+    "\n  query GetPaymentsByUser(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getPaymentsByUser(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        status\n        dateOfPayment\n        endDate\n        type\n        price\n        paymentType\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n": types.GetPaymentsByUserDocument,
+    "\n  query GetUsers(\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n    $searchTerm: String\n    $statusFilter: UserBlockStatus\n  ) {\n    getUsers(\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n      searchTerm: $searchTerm\n      statusFilter: $statusFilter\n    ) {\n      users {\n        id\n        userName\n        createdAt\n        profile {\n          id\n          firstName\n          lastName\n        }\n        userBan {\n          reason\n          createdAt\n        }\n      }\n      pagination {\n        pagesCount\n        page\n        pageSize\n        totalCount\n      }\n    }\n  }\n": types.GetUsersDocument,
+    "\n  query GetUser($userId: Int!) {\n    getUser(userId: $userId) {\n      id\n      userName\n      createdAt\n      profile {\n        id\n        userName\n        firstName\n        lastName\n        createdAt\n        avatars {\n          url\n          width\n          height\n        }\n      }\n      userBan {\n        reason\n        createdAt\n      }\n    }\n  }\n": types.GetUserDocument,
+    "\n  mutation LoginAdmin($email: String!, $password: String!) {\n    loginAdmin(email: $email, password: $password) {\n      logged\n    }\n  }\n": types.LoginAdminDocument,
+    "\n  query GetPostsByUser($userId: Int!) {\n    getPostsByUser(userId: $userId) {\n      pagesCount\n      pageSize\n      totalCount\n      items {\n        id\n        url\n        width\n        height\n      }\n    }\n  }\n": types.GetPostsByUserDocument,
+    "\n  mutation RemoveUser($userId: Int!) {\n    removeUser(userId: $userId)\n  }\n": types.RemoveUserDocument,
+};
+
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ *
+ *
+ * @example
+ * ```ts
+ * const query = graphql(`query GetUser($id: ID!) { user(id: $id) { name } }`);
+ * ```
+ *
+ * The query argument is unknown!
+ * Please regenerate the types.
+ */
+export function graphql(source: string): unknown;
+
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetFollowers(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowers(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n"): (typeof documents)["\n  query GetFollowers(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowers(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetFollowing(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowing(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n"): (typeof documents)["\n  query GetFollowing(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowing(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetPaymentsByUser(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getPaymentsByUser(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        status\n        dateOfPayment\n        endDate\n        type\n        price\n        paymentType\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n"): (typeof documents)["\n  query GetPaymentsByUser(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getPaymentsByUser(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        status\n        dateOfPayment\n        endDate\n        type\n        price\n        paymentType\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetUsers(\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n    $searchTerm: String\n    $statusFilter: UserBlockStatus\n  ) {\n    getUsers(\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n      searchTerm: $searchTerm\n      statusFilter: $statusFilter\n    ) {\n      users {\n        id\n        userName\n        createdAt\n        profile {\n          id\n          firstName\n          lastName\n        }\n        userBan {\n          reason\n          createdAt\n        }\n      }\n      pagination {\n        pagesCount\n        page\n        pageSize\n        totalCount\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetUsers(\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n    $searchTerm: String\n    $statusFilter: UserBlockStatus\n  ) {\n    getUsers(\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n      searchTerm: $searchTerm\n      statusFilter: $statusFilter\n    ) {\n      users {\n        id\n        userName\n        createdAt\n        profile {\n          id\n          firstName\n          lastName\n        }\n        userBan {\n          reason\n          createdAt\n        }\n      }\n      pagination {\n        pagesCount\n        page\n        pageSize\n        totalCount\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetUser($userId: Int!) {\n    getUser(userId: $userId) {\n      id\n      userName\n      createdAt\n      profile {\n        id\n        userName\n        firstName\n        lastName\n        createdAt\n        avatars {\n          url\n          width\n          height\n        }\n      }\n      userBan {\n        reason\n        createdAt\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetUser($userId: Int!) {\n    getUser(userId: $userId) {\n      id\n      userName\n      createdAt\n      profile {\n        id\n        userName\n        firstName\n        lastName\n        createdAt\n        avatars {\n          url\n          width\n          height\n        }\n      }\n      userBan {\n        reason\n        createdAt\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation LoginAdmin($email: String!, $password: String!) {\n    loginAdmin(email: $email, password: $password) {\n      logged\n    }\n  }\n"): (typeof documents)["\n  mutation LoginAdmin($email: String!, $password: String!) {\n    loginAdmin(email: $email, password: $password) {\n      logged\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetPostsByUser($userId: Int!) {\n    getPostsByUser(userId: $userId) {\n      pagesCount\n      pageSize\n      totalCount\n      items {\n        id\n        url\n        width\n        height\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetPostsByUser($userId: Int!) {\n    getPostsByUser(userId: $userId) {\n      pagesCount\n      pageSize\n      totalCount\n      items {\n        id\n        url\n        width\n        height\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation RemoveUser($userId: Int!) {\n    removeUser(userId: $userId)\n  }\n"): (typeof documents)["\n  mutation RemoveUser($userId: Int!) {\n    removeUser(userId: $userId)\n  }\n"];
+
+export function graphql(source: string) {
+  return (documents as any)[source] ?? {};
+}
+
+export type DocumentType<TDocumentNode extends DocumentNode<any, any>> = TDocumentNode extends DocumentNode<  infer TType,  any>  ? TType  : never;

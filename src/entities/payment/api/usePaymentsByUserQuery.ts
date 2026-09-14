@@ -1,15 +1,17 @@
 'use client'
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@apollo/client/react'
 
-import type { GetPaymentsByUserInput, PaymentPaginationModel } from '@/shared/api/graphql/client'
-import { getPaymentsByUser } from '@/shared/api/graphql/client'
+import type { GetPaymentsByUserQueryVariables } from '@/shared/api/graphql/__generated__/graphql'
 
-import { paymentsQueryKeys } from './queryKeys'
+import { GetPaymentsByUserDocument } from './documents'
 
-export const usePaymentsByUserQuery = (input: GetPaymentsByUserInput) =>
-  useQuery<PaymentPaginationModel>({
-    queryKey: paymentsQueryKeys.byUser(input),
-    queryFn: () => getPaymentsByUser(input),
-    placeholderData: keepPreviousData,
+export const usePaymentsByUserQuery = (input: GetPaymentsByUserQueryVariables) => {
+  const { data, ...result } = useQuery(GetPaymentsByUserDocument, {
+    variables: input,
+    notifyOnNetworkStatusChange: true,
+    ssr: false,
   })
+
+  return { ...result, data: data?.getPaymentsByUser }
+}

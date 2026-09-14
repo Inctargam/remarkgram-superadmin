@@ -8,7 +8,14 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort'
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'storybook-static/**']),
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
+    'storybook-static/**',
+    'src/shared/api/graphql/__generated__/**',
+  ]),
   prettier,
   {
     plugins: {

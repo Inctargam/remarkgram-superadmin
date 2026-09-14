@@ -2,6 +2,24 @@
 
 Все значимые изменения проекта суперадминки Inctagram (SuperAdmin) документируются в этом файле.
 
+## 2026-09-11
+
+#### Миграция клиентского слоя с TanStack Query на Apollo Client
+
+- Добавлены зависимости `@apollo/client@4.2.12`, `@apollo/client-integration-nextjs@0.14.5`, `rxjs@7.8.2`, `@graphql-typed-document-node/core@3.2.0`; TanStack Query удалён.
+- Внедрён codegen (`@graphql-codegen/cli` + `client-preset`, `codegen.ts`, скрипты `codegen`/`codegen:watch`); сгенерированные типы — в `src/shared/api/graphql/__generated__/` (исключены из ESLint/Prettier).
+- `QueryProvider` заменён на `ApolloProvider` (`ApolloNextAppProvider` + `HttpLink` на `/api/graphql`) в `app/layout.tsx`; запросы выполняются клиентски (`ssr: false`).
+- Все query-хуки (`useUsersQuery`, `useUserQuery`, `useFollowersQuery`, `useFollowingQuery`, `usePaymentsByUserQuery`, `usePostsByUserQuery`) переведены на `useQuery` из `@apollo/client/react`; `keepPreviousData` заменён на `data ?? previousData`, `enabled` — на `skipToken`.
+- `useDeleteUserMutation` переведён на `useMutation` с `refetchQueries: ['GetUsers']` (обновление активного списка после удаления).
+- Авторизация (`useSignInForm`) переведена на `useMutation(LoginAdminDocument)`.
+- Удалены `src/shared/api/graphql/client.ts` (ручной `graphqlRequest`), фабрики `queryKeys.ts` и `src/providers/QueryProvider.tsx`.
+- Добавлен тест синхронизации кэша после удаления пользователя; всего 22 теста.
+
+#### Verification
+
+- `pnpm lint` — 0 ошибок; `pnpm exec tsc --noEmit` — чисто; `pnpm test` — 22 теста; `pnpm build` — успешно.
+- Дымовой тест dev-сервера: `GET /sign-in` — 200, `POST /api/graphql` — 200.
+
 ## 2026-09-02
 
 #### UC-6. Просмотр детальной информации о пользователе

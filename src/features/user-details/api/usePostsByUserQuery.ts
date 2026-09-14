@@ -1,13 +1,20 @@
 'use client'
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { skipToken, useQuery } from '@apollo/client/react'
 
-import { getPostsByUser } from '@/shared/api/graphql/client'
+import type { GetPostsByUserQuery } from '@/shared/api/graphql/__generated__/graphql'
 
-export const usePostsByUserQuery = (userId: number) =>
-  useQuery({
-    queryKey: ['posts', 'byUser', userId],
-    queryFn: () => getPostsByUser(userId),
-    placeholderData: keepPreviousData,
-    enabled: Number.isInteger(userId) && userId > 0,
-  })
+import { GetPostsByUserDocument } from './documents'
+
+export type PostsByUserModel = GetPostsByUserQuery['getPostsByUser']
+
+export const usePostsByUserQuery = (userId: number) => {
+  const { data, ...result } = useQuery(
+    GetPostsByUserDocument,
+    Number.isInteger(userId) && userId > 0
+      ? { variables: { userId }, notifyOnNetworkStatusChange: true, ssr: false }
+      : skipToken
+  )
+
+  return { ...result, data: data?.getPostsByUser }
+}

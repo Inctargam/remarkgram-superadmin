@@ -57,13 +57,13 @@ export const UserDetailsPage = () => {
         </Tabs.List>
 
         <Tabs.Panel className={styles.panel} value="uploads">
-          <UploadsPanel isLoading={posts.isPending} model={posts.data} />
+          <UploadsPanel isLoading={posts.loading && !posts.data} model={posts.data} />
         </Tabs.Panel>
 
         <Tabs.Panel className={styles.panel} value="payments">
           <PaymentsPanel
             data={payments.data}
-            isLoading={payments.isPending}
+            isLoading={payments.loading && !payments.data}
             itemsPerPageOptions={ITEMS_PER_PAGE_OPTIONS}
             page={paymentsPage}
             pageSize={pageSize}
@@ -76,7 +76,7 @@ export const UserDetailsPage = () => {
           <FollowPanel
             data={followers.data}
             emptyMessage="Followers not found."
-            isLoading={followers.isPending}
+            isLoading={followers.loading && !followers.data}
             itemsPerPageOptions={ITEMS_PER_PAGE_OPTIONS}
             page={followersPage}
             pageSize={pageSize}
@@ -89,7 +89,7 @@ export const UserDetailsPage = () => {
           <FollowPanel
             data={following.data}
             emptyMessage="Following not found."
-            isLoading={following.isPending}
+            isLoading={following.loading && !following.data}
             itemsPerPageOptions={ITEMS_PER_PAGE_OPTIONS}
             page={followingPage}
             pageSize={pageSize}

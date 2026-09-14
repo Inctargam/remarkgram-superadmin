@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation'
 import { useState } from 'react'
 
-import { useFollowListQuery } from '@/entities/follow'
+import { useFollowersQuery, useFollowingQuery } from '@/entities/follow'
 import { usePaymentsByUserQuery } from '@/entities/payment'
 import { useUserQuery } from '@/entities/user'
 
@@ -38,12 +38,12 @@ export const useUserDetails = () => {
 
   const userQuery = useUserQuery(userId)
   const paymentsQuery = usePaymentsByUserQuery({ userId, pageNumber: paymentsPage, pageSize })
-  const followersQuery = useFollowListQuery('followers', {
+  const followersQuery = useFollowersQuery({
     userId,
     pageNumber: followersPage,
     pageSize,
   })
-  const followingQuery = useFollowListQuery('following', {
+  const followingQuery = useFollowingQuery({
     userId,
     pageNumber: followingPage,
     pageSize,
@@ -65,7 +65,7 @@ export const useUserDetails = () => {
     followersPage,
     following: followingQuery,
     followingPage,
-    isLoading: userQuery.isPending,
+    isLoading: userQuery.loading && !userQuery.data,
     pageSize,
     payments: paymentsQuery,
     paymentsPage,
