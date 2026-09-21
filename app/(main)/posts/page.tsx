@@ -1,9 +1,5 @@
-import styles from './page.module.css'
+import { PostsPage } from '@/features/posts-list'
 
-export default function PostsPage() {
-  return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Posts list</h1>
-    </div>
-  )
+export default function PostsPageRoute() {
+  return <PostsPage />
 }
