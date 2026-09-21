@@ -18,6 +18,7 @@ export const PostsPage = () => {
     hasMore,
     isInitialLoading,
     isLoadingMore,
+    loadMoreErrorMessage,
     posts,
     searchValue,
     changeSearchValue,
@@ -45,6 +46,7 @@ export const PostsPage = () => {
             onBlockOwnerClick={setBlockTarget}
             onLoadMore={loadMore}
           />
+          {loadMoreErrorMessage ? <Alert variant="error">{loadMoreErrorMessage}</Alert> : null}
         </>
       )}
 

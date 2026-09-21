@@ -428,9 +428,14 @@ const getPosts = (_: unknown, args: GetPostsArgs) => {
   posts.sort((a, b) => a.createdAt.localeCompare(b.createdAt) * direction)
 
   const totalCount = posts.length
-  const startIndex = args.endCursorPostId
-    ? posts.findIndex((post) => post.id === args.endCursorPostId) + 1
-    : 0
+  const cursorIndex = args.endCursorPostId
+    ? posts.findIndex((post) => post.id === args.endCursorPostId)
+    : -1
+  // A cursor that no longer matches the current filter/sort (e.g. its post was
+  // deleted or excluded by a new search term) means we can't resume a position —
+  // treat it as the end of the list instead of restarting from page 1, which
+  // would re-emit page-1 items as duplicates to the client.
+  const startIndex = !args.endCursorPostId ? 0 : cursorIndex === -1 ? totalCount : cursorIndex + 1
   const items = posts.slice(startIndex, startIndex + pageSize)
 
   return {
@@ -441,11 +446,23 @@ const getPosts = (_: unknown, args: GetPostsArgs) => {
   }
 }
 
+// A post's owner can be removed (e.g. via `removeUser`) while the post itself lingers in
+// MOCK_POSTS. Returning a placeholder instead of throwing keeps that one post's owner
+// info absent without nulling the entire non-null `getPosts.items` list via GraphQL
+// error propagation.
+const DELETED_POST_OWNER_USERNAME = 'deleted-user'
+
 const buildPostOwner = (post: MockPost) => {
   const owner = MOCK_USERS.find((user) => user.id === post.ownerId)
 
   if (!owner) {
-    throw new GraphQLError(`Post owner not found. Id: ${post.ownerId}`)
+    return {
+      id: post.ownerId,
+      userName: DELETED_POST_OWNER_USERNAME,
+      firstName: null,
+      lastName: null,
+      avatars: [],
+    }
   }
 
   return {

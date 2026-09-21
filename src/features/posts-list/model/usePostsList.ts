@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { Post, SortDirection } from '@/entities/post'
 import { POSTS_PAGE_SIZE, usePostAddedSubscription, usePostsQuery } from '@/entities/post'
@@ -10,6 +10,7 @@ export type PostsListState = {
   hasMore: boolean
   isInitialLoading: boolean
   isLoadingMore: boolean
+  loadMoreErrorMessage: string | null
   posts: Post[]
   searchValue: string
   changeSearchValue: (value: string) => void
@@ -32,6 +33,7 @@ export const usePostsList = (): PostsListState => {
   const [debouncedSearchValue, setDebouncedSearchValue] = useState('')
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [loadMoreErrorMessage, setLoadMoreErrorMessage] = useState<string | null>(null)
 
   const changeSearchValue = (value: string) => {
     setSearchValue(value)
@@ -45,6 +47,14 @@ export const usePostsList = (): PostsListState => {
     return () => clearTimeout(timer)
   }, [searchValue])
 
+  // Tracks the search term the current `posts` list was built for, and lets `loadMore`
+  // detect a stale in-flight request after the search term has since changed.
+  const debouncedSearchValueRef = useRef(debouncedSearchValue)
+
+  useEffect(() => {
+    debouncedSearchValueRef.current = debouncedSearchValue
+  }, [debouncedSearchValue])
+
   const { data, error, loading, fetchMore } = usePostsQuery({
     pageSize: POSTS_PAGE_SIZE,
     searchTerm: debouncedSearchValue || undefined,
@@ -52,14 +62,29 @@ export const usePostsList = (): PostsListState => {
     sortDirection: SORT_DIRECTION,
   })
 
-  // A fresh `getPosts` result (first page load or a search change) replaces the
-  // walked-so-far list; `fetchMore` pages are appended separately in `loadMore`.
+  // A fresh `getPosts` result triggers this whenever the base query's `data` changes —
+  // that includes a real search change, but also a same-variables refetch (e.g.
+  // `refetchQueries: ['GetPosts']` after banning an owner). Only a search change should
+  // discard the pages walked so far via `loadMore`; any other refetch instead merges the
+  // refreshed page-1 items into the existing list so scrolled-in pages survive.
   // Adjusted during render (not in an effect) per https://react.dev/learn/you-might-not-need-an-effect
   const [postsSource, setPostsSource] = useState<typeof data>(undefined)
+  const [appliedSearchValue, setAppliedSearchValue] = useState(debouncedSearchValue)
 
   if (data !== postsSource) {
+    const isFreshSearch = appliedSearchValue !== debouncedSearchValue
+    const freshItems = data?.items ?? []
+
     setPostsSource(data)
-    setPosts(data?.items ?? [])
+    setAppliedSearchValue(debouncedSearchValue)
+
+    if (isFreshSearch) {
+      setPosts(freshItems)
+    } else {
+      const freshIds = new Set(freshItems.map((post) => post.id))
+
+      setPosts(dedupeById([...freshItems, ...posts.filter((post) => !freshIds.has(post.id))]))
+    }
   }
 
   const onPostAdded = (post: Post) => {
@@ -80,12 +105,25 @@ export const usePostsList = (): PostsListState => {
     }
 
     setIsLoadingMore(true)
+    setLoadMoreErrorMessage(null)
+
+    const requestedForSearchValue = debouncedSearchValueRef.current
 
     fetchMore({
       variables: { endCursorPostId: lastPostId },
     })
       .then((result) => {
+        // The search term changed while this request was in flight — its cursor no
+        // longer applies to the now-current list, so drop the response instead of
+        // appending stale-search results onto it.
+        if (debouncedSearchValueRef.current !== requestedForSearchValue) {
+          return
+        }
+
         setPosts((current) => dedupeById([...current, ...result.data.getPosts.items]))
+      })
+      .catch(() => {
+        setLoadMoreErrorMessage(LOAD_ERROR_MESSAGE)
       })
       .finally(() => {
         setIsLoadingMore(false)
@@ -97,6 +135,7 @@ export const usePostsList = (): PostsListState => {
     hasMore,
     isInitialLoading: loading && posts.length === 0,
     isLoadingMore,
+    loadMoreErrorMessage,
     posts,
     searchValue,
     changeSearchValue,
