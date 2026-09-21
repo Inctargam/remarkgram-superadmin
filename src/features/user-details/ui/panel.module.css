@@ -1,0 +1,14 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.head {
+  background-color: var(--color-dark-500);
+}
