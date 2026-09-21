@@ -481,6 +481,9 @@ const publishMockPost = () => {
   postAddedPubSub.publish('postAdded', post)
 }
 
+/** Test-only hook to fire a new post without waiting for the dev interval. */
+export const triggerMockPostAdded = publishMockPost
+
 declare global {
   var __mockPostAddedInterval: NodeJS.Timeout | undefined
 }

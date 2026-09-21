@@ -18,3 +18,15 @@
 **Verified:** `tsc --noEmit`, `eslint`, `vitest run server.test.ts` (21/21) зелёные. `getPosts`/`postAdded` руками проверены curl'ом на dev-сервере (localhost, без кастомного hosts-имени — `dev.admin.remark-gram.com` не резолвится на этой машине, `EADDRNOTAVAIL`).
 **Blocker:** визуально проверить в браузере через Claude-in-Chrome не вышло — расширение зависает на "page still loading" на любой странице (репродуцируется даже на `example.com`), похоже на проблему самого расширения в этой сессии, не связано с кодом.
 **Remaining:** этап 8 (тесты на `banUser`/`unbanUser`, `usePostsList`, `BlockUserDialog`).
+
+## 2026-09-21 — Posts list: тесты (этап 8)
+**Goal:** закрыть последний этап `personal/ROADMAP.md` — тесты на `getPosts`/`postAdded`/`banUser`/`unbanUser` и unit на `usePostsList`/`BlockUserDialog`.
+**Decisions:**
+- В проекте не было ни jsdom, ни `@testing-library/react` (только vitest + Apollo `MockLink` на node-окружении). Спросил пользователя — выбрал добавить обе зависимости, чтобы полноценно рендерить хук/диалог, а не ограничиваться cache-level тестами. Добавлены `jsdom` и `@testing-library/react` в devDependencies; `vitest.config.ts` не трогал — окружение переключается точечно через `// @vitest-environment jsdom` в шапке новых test-файлов, старые остаются на `node`.
+- `server.test.ts`: `getPosts` (пагинация по курсору, поиск по `userName` владельца, сортировка, дефолты), `banUser`/`unbanUser` (бан отражается на `userBan` постов автора, ошибка на неизвестном `userId`).
+- `postAdded`-подписка тестируется через `yoga.handleRequest` с `Accept: text/event-stream` и ручным чтением `ReadableStream` — прямой `subscribe()` из пакета `graphql` падает с "Cannot use GraphQLSchema from another module or realm" (в node_modules есть второй экземпляр `graphql`, который тянет `@graphql-tools/executor`). Добавлен `triggerMockPostAdded` — тестовый хук поверх `publishMockPost`, чтобы не ждать 15-секундный dev-интервал.
+- `usePostsList.test.tsx`: `renderHook` + `MockedProvider` со сплитом `MockLink`/`MockSubscriptionLink` по `operationType` (как в реальном `ApolloProvider.tsx`) — проверяет накопление страниц через `fetchMore` и мердж/дедуп поста из подписки.
+- `BlockUserDialog.test.tsx`: `render` + `fireEvent` (без `@testing-library/jest-dom` — хватило нативных `.disabled` проверок) — подтверждение с причиной вызывает `banUser` с нужными переменными и закрывает диалог; кнопка "Yes" заблокирована для "Another reason" без текста.
+- `useBanPostOwnerMutation.test.ts` — по паттерну `useDeleteUserMutation.test.ts`: `refetchQueries: ['GetPosts']` после `banUser` действительно перезапрашивает фид.
+**Verified:** `tsc --noEmit`, `eslint` (только 2 старых warning — `<img>` в `PostsGrid`/`UploadsPanel` и неиспользуемый `totalCount` в `getUsers`, оба не мои), `vitest run` — 5 файлов / 38 тестов зелёных.
+**Remaining:** ничего по ROADMAP — все 8 этапов закрыты. Не мой объём: полный UC блокировки (`personal/UC-ban-user.md`).
