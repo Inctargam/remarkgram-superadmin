@@ -2,7 +2,7 @@
 
 import { BlockIcon, Card, ImageOutlineIcon } from '@remark-gram/ui-kit'
 
-import type { Post } from '@/entities/post'
+import type { Post, PostOwner } from '@/entities/post'
 import { formatShortDate } from '@/shared/lib/date'
 
 import { useInfiniteScroll } from '../shared/lib/useInfiniteScroll'
@@ -15,10 +15,18 @@ type Props = {
   isLoading: boolean
   isLoadingMore: boolean
   posts: Post[]
+  onBlockOwnerClick: (owner: PostOwner) => void
   onLoadMore: () => void
 }
 
-export const PostsGrid = ({ hasMore, isLoading, isLoadingMore, posts, onLoadMore }: Props) => {
+export const PostsGrid = ({
+  hasMore,
+  isLoading,
+  isLoadingMore,
+  posts,
+  onBlockOwnerClick,
+  onLoadMore,
+}: Props) => {
   const { sentinelRef } = useInfiniteScroll({
     hasMore,
     isLoading: isLoadingMore,
@@ -56,7 +64,15 @@ export const PostsGrid = ({ hasMore, isLoading, isLoadingMore, posts, onLoadMore
                 )}
                 {post.userBan ? (
                   <BlockIcon aria-hidden className={styles.blockIcon} size={24} />
-                ) : null}
+                ) : (
+                  <button
+                    aria-label={`Block ${post.postOwner.userName}`}
+                    className={styles.blockButton}
+                    type="button"
+                    onClick={() => onBlockOwnerClick(post.postOwner)}>
+                    <BlockIcon aria-hidden size={24} />
+                  </button>
+                )}
               </div>
               <p className={styles.description}>{post.description}</p>
               <p className={styles.date}>{formatShortDate(post.createdAt)}</p>

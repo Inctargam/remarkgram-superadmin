@@ -38,6 +38,22 @@
   color: var(--color-text-error);
 }
 
+.blockButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.blockButton:hover {
+  color: var(--color-text-error);
+}
+
 .description {
   margin: 0;
   color: var(--color-text-primary);

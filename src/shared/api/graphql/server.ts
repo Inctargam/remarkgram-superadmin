@@ -113,6 +113,30 @@ const removeUser = (_: unknown, { userId }: { userId: number }) => {
   return true
 }
 
+const banUser = (_: unknown, { banReason, userId }: { banReason: string; userId: number }) => {
+  const user = MOCK_USERS.find((candidate) => candidate.id === userId)
+
+  if (!user) {
+    throw new GraphQLError(`User not found. Id: ${userId}`)
+  }
+
+  user.userBan = { reason: banReason, createdAt: new Date().toISOString() }
+
+  return true
+}
+
+const unbanUser = (_: unknown, { userId }: { userId: number }) => {
+  const user = MOCK_USERS.find((candidate) => candidate.id === userId)
+
+  if (!user) {
+    throw new GraphQLError(`User not found. Id: ${userId}`)
+  }
+
+  user.userBan = undefined
+
+  return true
+}
+
 type GetUsersArgs = {
   pageNumber?: number | null
   pageSize?: number | null
@@ -481,6 +505,8 @@ export const createServerSchema = () =>
           logged: email === ADMIN_EMAIL && password === ADMIN_PASSWORD,
         }),
         removeUser,
+        banUser,
+        unbanUser,
       },
       Query: {
         getUsers,
