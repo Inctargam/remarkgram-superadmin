@@ -7,6 +7,7 @@ import { formatShortDate } from '@/shared/lib/date'
 
 import { useInfiniteScroll } from '../shared/lib/useInfiniteScroll'
 import styles from './postsGrid.module.css'
+import { Tooltip } from './Tooltip'
 
 const EMPTY_MESSAGE = 'Posts not found.'
 
@@ -63,15 +64,22 @@ export const PostsGrid = ({
                   <ImageOutlineIcon aria-hidden className={styles.placeholderIcon} size={48} />
                 )}
                 {post.userBan ? (
-                  <BlockIcon aria-hidden className={styles.blockIcon} size={24} />
+                  <>
+                    <span className={styles.bannedBadge}>Banned</span>
+                    <BlockIcon aria-hidden className={styles.blockIcon} size={24} />
+                  </>
                 ) : (
-                  <button
-                    aria-label={`Block ${post.postOwner.userName}`}
-                    className={styles.blockButton}
-                    type="button"
-                    onClick={() => onBlockOwnerClick(post.postOwner)}>
-                    <BlockIcon aria-hidden size={24} />
-                  </button>
+                  <span className={styles.blockButtonWrapper}>
+                    <Tooltip label="Block this post owner across the platform">
+                      <button
+                        aria-label={`Block ${post.postOwner.userName}`}
+                        className={styles.blockButton}
+                        type="button"
+                        onClick={() => onBlockOwnerClick(post.postOwner)}>
+                        <BlockIcon aria-hidden size={24} />
+                      </button>
+                    </Tooltip>
+                  </span>
                 )}
               </div>
               <p className={styles.description}>{post.description}</p>

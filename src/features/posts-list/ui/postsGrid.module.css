@@ -38,10 +38,13 @@
   color: var(--color-text-error);
 }
 
-.blockButton {
+.blockButtonWrapper {
   position: absolute;
   top: 8px;
   right: 8px;
+}
+
+.blockButton {
   display: flex;
   padding: 0;
   border: none;
@@ -52,6 +55,20 @@
 
 .blockButton:hover {
   color: var(--color-text-error);
+}
+
+.bannedBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 .description {
