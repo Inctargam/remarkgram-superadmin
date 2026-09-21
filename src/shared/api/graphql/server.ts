@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { GraphQLError } from 'graphql'
-import { createSchema } from 'graphql-yoga'
+import { createPubSub, createSchema } from 'graphql-yoga'
 
 export const ADMIN_EMAIL = 'admin@gmail.com'
 export const ADMIN_PASSWORD = 'admin'
@@ -307,6 +307,171 @@ const getPostsByUser = (_: unknown, { userId }: { userId: number }) => {
   }
 }
 
+type MockImagePost = {
+  id: number
+  createdAt: string
+  url: string
+  width: number
+  height: number
+  fileSize: number
+}
+
+type MockPost = {
+  id: number
+  ownerId: number
+  description: string
+  createdAt: string
+  updatedAt: string
+  images: MockImagePost[]
+}
+
+const POST_DESCRIPTIONS = [
+  'Morning coffee ritual',
+  'City lights at night',
+  'Weekend hike recap',
+  'New project sneak peek',
+  'Homemade pasta night',
+  'Studio session vibes',
+  'Sunset from the rooftop',
+  'Books I am reading this month',
+] as const
+
+const buildMockPostImages = (postId: number, createdAt: string, count: number): MockImagePost[] =>
+  Array.from({ length: count }, (_, index) => ({
+    id: postId * 10 + index + 1,
+    createdAt,
+    url: `https://picsum.photos/seed/post-${postId}-${index + 1}/400/400`,
+    width: 400,
+    height: 400,
+    fileSize: 400,
+  }))
+
+const buildMockPosts = (): MockPost[] => {
+  const owners = MOCK_USERS.slice(0, 20)
+
+  return Array.from({ length: 45 }, (_, index) => {
+    const id = index + 1
+    const owner = owners[index % owners.length]
+    const createdAt = new Date(Date.UTC(2023, 0, 45 - index, 10, 0, 0)).toISOString()
+    const imagesCount = index % 5 === 0 ? 0 : (index % 3) + 1
+
+    return {
+      id,
+      ownerId: owner.id,
+      description: POST_DESCRIPTIONS[index % POST_DESCRIPTIONS.length],
+      createdAt,
+      updatedAt: createdAt,
+      images: buildMockPostImages(id, createdAt, imagesCount),
+    }
+  })
+}
+
+const MOCK_POSTS: MockPost[] = buildMockPosts()
+
+/** Restores the seed after mutating operations — for tests and dev reloads. */
+export const resetMockPosts = () => {
+  MOCK_POSTS.length = 0
+  MOCK_POSTS.push(...buildMockPosts())
+}
+
+type GetPostsArgs = {
+  endCursorPostId?: number | null
+  searchTerm?: string | null
+  pageSize?: number | null
+  sortBy?: string | null
+  sortDirection?: string | null
+}
+
+const getPosts = (_: unknown, args: GetPostsArgs) => {
+  const pageSize = args.pageSize ?? 10
+  const sortDirection = args.sortDirection ?? 'desc'
+  const searchTerm = args.searchTerm ?? ''
+
+  let posts = [...MOCK_POSTS]
+
+  if (searchTerm) {
+    const term = searchTerm.toLowerCase()
+
+    posts = posts.filter((post) =>
+      (MOCK_USERS.find((user) => user.id === post.ownerId)?.userName ?? '')
+        .toLowerCase()
+        .includes(term)
+    )
+  }
+
+  const direction = sortDirection === 'asc' ? 1 : -1
+
+  posts.sort((a, b) => a.createdAt.localeCompare(b.createdAt) * direction)
+
+  const totalCount = posts.length
+  const startIndex = args.endCursorPostId
+    ? posts.findIndex((post) => post.id === args.endCursorPostId) + 1
+    : 0
+  const items = posts.slice(startIndex, startIndex + pageSize)
+
+  return {
+    pagesCount: Math.ceil(totalCount / pageSize),
+    pageSize,
+    totalCount,
+    items,
+  }
+}
+
+const buildPostOwner = (post: MockPost) => {
+  const owner = MOCK_USERS.find((user) => user.id === post.ownerId)
+
+  if (!owner) {
+    throw new GraphQLError(`Post owner not found. Id: ${post.ownerId}`)
+  }
+
+  return {
+    id: owner.id,
+    userName: owner.userName,
+    firstName: owner.profile.firstName,
+    lastName: owner.profile.lastName,
+    avatars: owner.profile.avatars,
+  }
+}
+
+const postAddedPubSub = createPubSub<{ postAdded: [post: MockPost] }>()
+
+let mockPostIdCounter = MOCK_POSTS.length
+
+/** Simulates step 3 of the UC (a new post arriving) — no real publishing app exists in the repo. */
+const publishMockPost = () => {
+  mockPostIdCounter += 1
+
+  const id = mockPostIdCounter
+  const owner = MOCK_USERS[Math.floor(Math.random() * MOCK_USERS.length)]
+  const createdAt = new Date().toISOString()
+  const post: MockPost = {
+    id,
+    ownerId: owner.id,
+    description: `Live post #${id}`,
+    createdAt,
+    updatedAt: createdAt,
+    images: buildMockPostImages(id, createdAt, 1),
+  }
+
+  MOCK_POSTS.unshift(post)
+  postAddedPubSub.publish('postAdded', post)
+}
+
+declare global {
+  var __mockPostAddedInterval: NodeJS.Timeout | undefined
+}
+
+/** Dev-only trigger: without this, `postAdded` never fires since no real client publishes posts. */
+const startMockPostAddedLoop = () => {
+  if (process.env.NODE_ENV !== 'development' || globalThis.__mockPostAddedInterval) {
+    return
+  }
+
+  globalThis.__mockPostAddedInterval = setInterval(publishMockPost, 15_000)
+}
+
+startMockPostAddedLoop()
+
 export const createServerSchema = () =>
   createSchema({
     typeDefs,
@@ -324,6 +489,17 @@ export const createServerSchema = () =>
         getFollowers,
         getFollowing,
         getPostsByUser,
+        getPosts,
+      },
+      Subscription: {
+        postAdded: {
+          subscribe: () => postAddedPubSub.subscribe('postAdded'),
+          resolve: (post: MockPost) => post,
+        },
+      },
+      Post: {
+        postOwner: buildPostOwner,
+        userBan: (post: MockPost) => MOCK_USERS.find((user) => user.id === post.ownerId)?.userBan,
       },
     },
   })
