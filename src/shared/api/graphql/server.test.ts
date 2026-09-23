@@ -112,6 +112,58 @@ const GET_PAYMENTS_BY_USER_QUERY = /* GraphQL */ `
   }
 `
 
+const GET_PAYMENTS_QUERY = /* GraphQL */ `
+  query GetPayments(
+    $pageNumber: Int
+    $pageSize: Int
+    $sortBy: String
+    $sortDirection: SortDirection
+    $searchTerm: String
+  ) {
+    getPayments(
+      pageNumber: $pageNumber
+      pageSize: $pageSize
+      sortBy: $sortBy
+      sortDirection: $sortDirection
+      searchTerm: $searchTerm
+    ) {
+      items {
+        id
+        userName
+        createdAt
+        amount
+        paymentMethod
+        avatars {
+          url
+        }
+      }
+      pagesCount
+      page
+      pageSize
+      totalCount
+    }
+  }
+`
+
+type GetPaymentsData = {
+  data?: {
+    getPayments: {
+      items: Array<{
+        id: number
+        userName: string
+        createdAt: string
+        amount: number
+        paymentMethod: string
+        avatars: Array<{ url: string }>
+      }>
+      pagesCount: number
+      page: number
+      pageSize: number
+      totalCount: number
+    }
+  }
+}
+
 const GET_FOLLOWERS_QUERY = /* GraphQL */ `
   query GetFollowers(
     $userId: Int!
@@ -200,7 +252,9 @@ const runGraphQL = async (query: string, variables?: Record<string, unknown>) =>
   )
 
   return response.json() as Promise<
-    GetUsersData & FollowItemsData & { data?: { loginAdmin: { logged: boolean } } }
+    GetUsersData &
+      FollowItemsData &
+      GetPaymentsData & { data?: { loginAdmin: { logged: boolean } } }
   >
 }
 
@@ -209,6 +263,9 @@ const runLoginAdmin = (email: string, password: string) =>
 
 const runGetUsers = (variables: Record<string, unknown>) => runGraphQL(GET_USERS_QUERY, variables)
 
+const runGetPayments = (variables: Record<string, unknown>) =>
+  runGraphQL(GET_PAYMENTS_QUERY, variables)
+
 const REMOVE_USER_MUTATION = /* GraphQL */ `
   mutation RemoveUser($userId: Int!) {
     removeUser(userId: $userId)
@@ -216,6 +273,47 @@ const REMOVE_USER_MUTATION = /* GraphQL */ `
 `
 
 const runRemoveUser = (userId: number) => runGraphQL(REMOVE_USER_MUTATION, { userId })
+
+describe('getPayments resolver', () => {
+  it('paginates the local payment fixtures using the selected page size', async () => {
+    const firstPage = await runGetPayments({ pageNumber: 1, pageSize: 10 })
+    const secondPage = await runGetPayments({ pageNumber: 2, pageSize: 10 })
+
+    expect(firstPage.data?.getPayments).toMatchObject({
+      page: 1,
+      pageSize: 10,
+      pagesCount: 2,
+      totalCount: 18,
+    })
+    expect(firstPage.data?.getPayments.items).toHaveLength(10)
+    expect(secondPage.data?.getPayments.items).toHaveLength(8)
+    expect(secondPage.data?.getPayments.items[0].id).toBe(11)
+  })
+
+  it('searches by username before calculating page counts', async () => {
+    const result = await runGetPayments({ pageNumber: 1, pageSize: 10, searchTerm: 'ANNA_' })
+
+    expect(result.data?.getPayments).toMatchObject({ totalCount: 3, pagesCount: 1 })
+    expect(result.data?.getPayments.items.map((payment) => payment.userName)).toEqual([
+      'Anna_Votakaya',
+      'Anna_Votakaya',
+      'Anna_Votakaya',
+    ])
+  })
+
+  it('sorts the payments before paginating them', async () => {
+    const result = await runGetPayments({
+      pageNumber: 1,
+      pageSize: 10,
+      sortBy: 'amount',
+      sortDirection: 'asc',
+    })
+
+    expect(result.data?.getPayments.items.slice(0, 6).map((payment) => payment.amount)).toEqual([
+      10, 10, 10, 10, 10, 10,
+    ])
+  })
+})
 
 describe('loginAdmin resolver', () => {
   it('logs in the admin with hardcoded credentials', async () => {
