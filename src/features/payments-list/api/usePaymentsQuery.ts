@@ -9,12 +9,16 @@ import { GetPaymentsDocument } from './documents'
 const AUTO_UPDATE_INTERVAL_MS = 30_000
 
 export const usePaymentsQuery = (variables: GetPaymentsQueryVariables, autoUpdate: boolean) => {
-  const { data, ...result } = useQuery(GetPaymentsDocument, {
+  const { data, previousData, ...result } = useQuery(GetPaymentsDocument, {
     variables,
     pollInterval: autoUpdate ? AUTO_UPDATE_INTERVAL_MS : 0,
     notifyOnNetworkStatusChange: true,
     ssr: false,
   })
 
-  return { ...result, data: data?.getPayments }
+  return {
+    ...result,
+    data: data?.getPayments,
+    previousData: previousData?.getPayments,
+  }
 }

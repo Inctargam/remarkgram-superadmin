@@ -8,6 +8,8 @@ import type { PaymentListSortDirection, PaymentListSortField } from './types'
 
 const PAGE_SIZE_OPTIONS = [6, 12, 18, 36, 72, 100]
 const SEARCH_DEBOUNCE_MS = 300
+
+// TODO: Replace the generic message when the backend error contract is defined.
 const LOAD_ERROR_MESSAGE = 'Failed to load payments. Please try again.'
 
 export const usePaymentsList = () => {
@@ -20,12 +22,18 @@ export const usePaymentsList = () => {
   const [pageSize, setPageSize] = useState(6)
 
   useEffect(() => {
-    const timer = setTimeout(() => setSearchTerm(searchValue.trim()), SEARCH_DEBOUNCE_MS)
+    const nextSearchTerm = searchValue.trim()
+    if (nextSearchTerm === searchTerm) return
+
+    const timer = setTimeout(() => {
+      setSearchTerm(nextSearchTerm)
+      setPage(1)
+    }, SEARCH_DEBOUNCE_MS)
 
     return () => clearTimeout(timer)
-  }, [searchValue])
+  }, [searchValue, searchTerm])
 
-  const { data, error, loading } = usePaymentsQuery(
+  const { data, error, loading, previousData } = usePaymentsQuery(
     {
       pageNumber: page,
       pageSize,
@@ -36,12 +44,13 @@ export const usePaymentsList = () => {
     autoUpdate
   )
 
+  const result = data ?? previousData
   const items =
-    data?.items.map((payment, index) => mapPaymentToListItem(payment, index, page, pageSize)) ?? []
+    result?.items.map((payment, index) => mapPaymentToListItem(payment, index, page, pageSize)) ??
+    []
 
   const changeSearchValue = (value: string) => {
     setSearchValue(value)
-    setPage(1)
   }
 
   const toggleSortBy = (field: PaymentListSortField) => {
@@ -62,12 +71,13 @@ export const usePaymentsList = () => {
   return {
     autoUpdate,
     errorMessage: error ? LOAD_ERROR_MESSAGE : null,
-    isLoading: loading && !data,
+    hasData: Boolean(result),
+    isLoading: loading && !result,
     items,
     page,
     pageSize,
     pageSizeOptions: PAGE_SIZE_OPTIONS,
-    pagesCount: data?.pagesCount ?? 0,
+    pagesCount: result?.pagesCount ?? 0,
     searchValue,
     sortBy,
     sortDirection,

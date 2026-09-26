@@ -21,7 +21,7 @@ export const PaymentsList = () => {
 
       {list.errorMessage ? <Alert variant="error">{list.errorMessage}</Alert> : null}
 
-      {!list.errorMessage ? (
+      {!list.errorMessage || list.hasData ? (
         <>
           <PaymentsTable
             isLoading={list.isLoading}
