@@ -1,5 +1,5 @@
-import { PaymentsPage } from '@/pages/payments'
+import { PaymentsList } from '@/features/payments-list'
 
 export default function PaymentsPageRoute() {
-  return <PaymentsPage />
+  return <PaymentsList />
 }
