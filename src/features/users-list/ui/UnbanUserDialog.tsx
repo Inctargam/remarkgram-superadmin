@@ -7,6 +7,7 @@ import { useState } from 'react'
 import type { User } from '@/entities/user'
 
 import { UnbanUserDocument } from '../api/documents'
+import { invalidateUsersLists } from '../api/invalidateUsersLists'
 import styles from './banUserDialog.module.css'
 
 type Props = {
@@ -18,6 +19,9 @@ export const UnbanUserDialog = ({ user, onClose }: Props) => {
   const [failed, setFailed] = useState(false)
   const [unbanUser, { loading }] = useMutation(UnbanUserDocument, {
     refetchQueries: ['GetUsers'],
+    update(cache, { data }) {
+      invalidateUsersLists(cache, data?.unbanUser)
+    },
   })
   const name = [user.profile.firstName, user.profile.lastName].filter(Boolean).join(' ')
 

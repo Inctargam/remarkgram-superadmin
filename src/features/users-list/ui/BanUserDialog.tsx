@@ -8,6 +8,7 @@ import { useState } from 'react'
 import type { User } from '@/entities/user'
 
 import { BanUserDocument } from '../api/documents'
+import { invalidateUsersLists } from '../api/invalidateUsersLists'
 import styles from './banUserDialog.module.css'
 
 const OTHER_REASON = 'Another reason'
@@ -26,7 +27,12 @@ export const BanUserDialog = ({ user, onClose }: Props) => {
   const [reason, setReason] = useState<string | null>(null)
   const [customReason, setCustomReason] = useState('')
   const [failed, setFailed] = useState(false)
-  const [banUser, { loading }] = useMutation(BanUserDocument, { refetchQueries: ['GetUsers'] })
+  const [banUser, { loading }] = useMutation(BanUserDocument, {
+    refetchQueries: ['GetUsers'],
+    update(cache, { data }) {
+      invalidateUsersLists(cache, data?.banUser)
+    },
+  })
 
   const name = [user.profile.firstName, user.profile.lastName].filter(Boolean).join(' ')
   const banReason = reason === OTHER_REASON ? customReason.trim() : reason
