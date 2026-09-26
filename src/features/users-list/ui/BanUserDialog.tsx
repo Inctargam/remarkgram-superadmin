@@ -73,6 +73,7 @@ export const BanUserDialog = ({ user, onClose }: Props) => {
       </p>
       <Select
         className={styles.reason}
+        label="Reason for ban"
         options={REASON_OPTIONS}
         placeholder="Reason for ban"
         renderValue={(value) => (
