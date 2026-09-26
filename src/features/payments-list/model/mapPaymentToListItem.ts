@@ -11,7 +11,7 @@ const SUBSCRIPTION_LABELS = {
 } as const
 
 const PAYMENT_METHOD_LABELS = {
-  STRIPE: 'Stipe',
+  STRIPE: 'Stripe',
   PAYPAL: 'PayPal',
   CREDIT_CARD: 'Credit card',
 } as const
