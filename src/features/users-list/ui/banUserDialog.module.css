@@ -1,0 +1,63 @@
+.dialog {
+  width: min(378px, calc(100vw - 32px));
+  border-width: 1px;
+  background-color: #333;
+}
+
+.dialog > div:first-child {
+  padding: 11px 23px;
+}
+
+.banBody,
+.unbanBody {
+  padding: 36px 23px 35px;
+}
+
+.message,
+.unbanMessage {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.message {
+  margin-bottom: 12px;
+}
+
+.reason {
+  width: 100%;
+}
+
+.reasonTrigger[data-popup-open] span[data-placeholder] {
+  color: #fff;
+}
+
+.otherReasonValue {
+  color: #8d9094;
+}
+
+.customReason {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.error {
+  margin: 12px 0 0;
+  color: #cc1439;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 48px;
+}
+
+.unbanActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 42px;
+}
+
+.action {
+  width: 130px;
+}

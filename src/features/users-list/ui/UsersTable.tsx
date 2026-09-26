@@ -24,7 +24,9 @@ const EMPTY_MESSAGE = 'Users not found.'
 const buildUserActionItems = (
   user: User,
   onMoreInfoClick: (user: User) => void,
-  onDeleteClick: (user: User) => void
+  onDeleteClick: (user: User) => void,
+  onBanClick: (user: User) => void,
+  onUnbanClick: (user: User) => void
 ): DropdownMenuItem[] => [
   {
     id: 'delete',
@@ -34,9 +36,9 @@ const buildUserActionItems = (
   },
   {
     id: 'toggle-ban',
-    label: 'Ban in the system',
+    label: user.userBan ? 'Un-ban User' : 'Ban in the system',
     icon: <BlockIcon aria-hidden size={24} />,
-    onSelect: () => {},
+    onSelect: () => (user.userBan ? onUnbanClick(user) : onBanClick(user)),
   },
   {
     id: 'more-information',
@@ -69,8 +71,10 @@ type Props = {
   sortBy: UsersListSortField
   sortDirection: 'asc' | 'desc'
   users: User[]
+  onBanClick: (user: User) => void
   onDeleteClick: (user: User) => void
   onMoreInfoClick: (user: User) => void
+  onUnbanClick: (user: User) => void
   onToggleSort: (field: UsersListSortField) => void
 }
 
@@ -79,8 +83,10 @@ export const UsersTable = ({
   sortBy,
   sortDirection,
   users,
+  onBanClick,
   onDeleteClick,
   onMoreInfoClick,
+  onUnbanClick,
   onToggleSort,
 }: Props) => {
   return (
@@ -126,7 +132,13 @@ export const UsersTable = ({
             const fullName = [user.profile.firstName, user.profile.lastName]
               .filter(Boolean)
               .join(' ')
-            const actionItems = buildUserActionItems(user, onMoreInfoClick, onDeleteClick)
+            const actionItems = buildUserActionItems(
+              user,
+              onMoreInfoClick,
+              onDeleteClick,
+              onBanClick,
+              onUnbanClick
+            )
 
             return (
               <Table.Row key={user.id} className={styles.row}>

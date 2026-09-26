@@ -23,6 +23,8 @@ type Documents = {
     "\n  mutation LoginAdmin($email: String!, $password: String!) {\n    loginAdmin(email: $email, password: $password) {\n      logged\n    }\n  }\n": typeof types.LoginAdminDocument,
     "\n  query GetPostsByUser($userId: Int!) {\n    getPostsByUser(userId: $userId) {\n      pagesCount\n      pageSize\n      totalCount\n      items {\n        id\n        url\n        width\n        height\n      }\n    }\n  }\n": typeof types.GetPostsByUserDocument,
     "\n  mutation RemoveUser($userId: Int!) {\n    removeUser(userId: $userId)\n  }\n": typeof types.RemoveUserDocument,
+    "\n  mutation BanUser($userId: Int!, $banReason: String!) {\n    banUser(userId: $userId, banReason: $banReason)\n  }\n": typeof types.BanUserDocument,
+    "\n  mutation UnbanUser($userId: Int!) {\n    unbanUser(userId: $userId)\n  }\n": typeof types.UnbanUserDocument,
 };
 const documents: Documents = {
     "\n  query GetFollowers(\n    $userId: Int!\n    $pageNumber: Int\n    $pageSize: Int\n    $sortBy: String\n    $sortDirection: SortDirection\n  ) {\n    getFollowers(\n      userId: $userId\n      pageNumber: $pageNumber\n      pageSize: $pageSize\n      sortBy: $sortBy\n      sortDirection: $sortDirection\n    ) {\n      items {\n        id\n        userId\n        userName\n        firstName\n        lastName\n        createdAt\n      }\n      pagesCount\n      page\n      pageSize\n      totalCount\n    }\n  }\n": types.GetFollowersDocument,
@@ -34,6 +36,8 @@ const documents: Documents = {
     "\n  mutation LoginAdmin($email: String!, $password: String!) {\n    loginAdmin(email: $email, password: $password) {\n      logged\n    }\n  }\n": types.LoginAdminDocument,
     "\n  query GetPostsByUser($userId: Int!) {\n    getPostsByUser(userId: $userId) {\n      pagesCount\n      pageSize\n      totalCount\n      items {\n        id\n        url\n        width\n        height\n      }\n    }\n  }\n": types.GetPostsByUserDocument,
     "\n  mutation RemoveUser($userId: Int!) {\n    removeUser(userId: $userId)\n  }\n": types.RemoveUserDocument,
+    "\n  mutation BanUser($userId: Int!, $banReason: String!) {\n    banUser(userId: $userId, banReason: $banReason)\n  }\n": types.BanUserDocument,
+    "\n  mutation UnbanUser($userId: Int!) {\n    unbanUser(userId: $userId)\n  }\n": types.UnbanUserDocument,
 };
 
 /**
@@ -86,6 +90,14 @@ export function graphql(source: "\n  query GetPostsByUser($userId: Int!) {\n    
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation RemoveUser($userId: Int!) {\n    removeUser(userId: $userId)\n  }\n"): (typeof documents)["\n  mutation RemoveUser($userId: Int!) {\n    removeUser(userId: $userId)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation BanUser($userId: Int!, $banReason: String!) {\n    banUser(userId: $userId, banReason: $banReason)\n  }\n"): (typeof documents)["\n  mutation BanUser($userId: Int!, $banReason: String!) {\n    banUser(userId: $userId, banReason: $banReason)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UnbanUser($userId: Int!) {\n    unbanUser(userId: $userId)\n  }\n"): (typeof documents)["\n  mutation UnbanUser($userId: Int!) {\n    unbanUser(userId: $userId)\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

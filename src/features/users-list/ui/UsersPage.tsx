@@ -7,7 +7,9 @@ import { useState } from 'react'
 import type { User } from '@/entities/user'
 
 import { useUsersList } from '../model/useUsersList'
+import { BanUserDialog } from './BanUserDialog'
 import { DeleteUserDialog } from './DeleteUserDialog'
+import { UnbanUserDialog } from './UnbanUserDialog'
 import styles from './usersPage.module.css'
 import { UsersTable } from './UsersTable'
 import { UsersToolbar } from './UsersToolbar'
@@ -17,6 +19,8 @@ const ITEMS_PER_PAGE_OPTIONS = [8, 16, 32, 64]
 export const UsersPage = () => {
   const router = useRouter()
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
+  const [banTarget, setBanTarget] = useState<User | null>(null)
+  const [unbanTarget, setUnbanTarget] = useState<User | null>(null)
   const {
     users,
     totalPages,
@@ -58,9 +62,11 @@ export const UsersPage = () => {
             sortBy={sortBy}
             sortDirection={sortDirection}
             users={users}
+            onBanClick={setBanTarget}
             onDeleteClick={setDeleteTarget}
             onMoreInfoClick={(user) => router.push(`/users/${user.id}`)}
             onToggleSort={toggleSortBy}
+            onUnbanClick={setUnbanTarget}
           />
           <Pagination
             currentPage={page}
@@ -79,6 +85,10 @@ export const UsersPage = () => {
           user={deleteTarget}
           onOpenChange={closeDeleteDialog}
         />
+      ) : null}
+      {banTarget ? <BanUserDialog user={banTarget} onClose={() => setBanTarget(null)} /> : null}
+      {unbanTarget ? (
+        <UnbanUserDialog user={unbanTarget} onClose={() => setUnbanTarget(null)} />
       ) : null}
     </div>
   )
