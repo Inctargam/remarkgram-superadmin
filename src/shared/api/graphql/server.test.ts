@@ -274,6 +274,18 @@ const REMOVE_USER_MUTATION = /* GraphQL */ `
 
 const runRemoveUser = (userId: number) => runGraphQL(REMOVE_USER_MUTATION, { userId })
 
+const BAN_USER_MUTATION = /* GraphQL */ `
+  mutation BanUser($userId: Int!, $banReason: String!) {
+    banUser(userId: $userId, banReason: $banReason)
+  }
+`
+
+const UNBAN_USER_MUTATION = /* GraphQL */ `
+  mutation UnbanUser($userId: Int!) {
+    unbanUser(userId: $userId)
+  }
+`
+
 describe('getPayments resolver', () => {
   it('paginates the local payment fixtures using the selected page size', async () => {
     const firstPage = await runGetPayments({ pageNumber: 1, pageSize: 10 })
@@ -446,6 +458,45 @@ describe('removeUser resolver', () => {
 
     expect(first.data).toEqual({ removeUser: true })
     expect(second.data).toEqual({ removeUser: false })
+  })
+})
+
+describe('user ban resolvers', () => {
+  beforeEach(() => {
+    resetMockUsers()
+  })
+
+  it('stores the reason and moves the user into the blocked filter', async () => {
+    const result = await runGraphQL(BAN_USER_MUTATION, {
+      userId: 2,
+      banReason: 'Bad behavior',
+    })
+    const blocked = await runGetUsers({ statusFilter: 'BLOCKED', pageSize: 80 })
+
+    expect(result.data).toEqual({ banUser: true })
+    expect(blocked.data?.getUsers.users.find((user) => user.id === 2)?.userBan?.reason).toBe(
+      'Bad behavior'
+    )
+    expect(blocked.data?.getUsers.pagination.totalCount).toBe(7)
+  })
+
+  it('removes the ban and moves the user into the unblocked filter', async () => {
+    const result = await runGraphQL(UNBAN_USER_MUTATION, { userId: 1 })
+    const unblocked = await runGetUsers({ statusFilter: 'UNBLOCKED', pageSize: 80 })
+
+    expect(result.data).toEqual({ unbanUser: true })
+    expect(unblocked.data?.getUsers.users.find((user) => user.id === 1)?.userBan).toBeNull()
+    expect(unblocked.data?.getUsers.pagination.totalCount).toBe(75)
+  })
+
+  it('rejects empty reasons and duplicate actions', async () => {
+    const empty = await runGraphQL(BAN_USER_MUTATION, { userId: 2, banReason: ' ' })
+    const duplicateBan = await runGraphQL(BAN_USER_MUTATION, { userId: 1, banReason: 'Spam' })
+    const duplicateUnban = await runGraphQL(UNBAN_USER_MUTATION, { userId: 2 })
+
+    expect(empty.data).toEqual({ banUser: false })
+    expect(duplicateBan.data).toEqual({ banUser: false })
+    expect(duplicateUnban.data).toEqual({ unbanUser: false })
   })
 })
 

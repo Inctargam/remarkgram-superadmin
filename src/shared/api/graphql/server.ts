@@ -115,6 +115,30 @@ const removeUser = (_: unknown, { userId }: { userId: number }) => {
   return true
 }
 
+const banUser = (_: unknown, { userId, banReason }: { userId: number; banReason: string }) => {
+  const user = MOCK_USERS.find((candidate) => candidate.id === userId)
+
+  if (!user || user.userBan || !banReason.trim()) {
+    return false
+  }
+
+  user.userBan = { reason: banReason.trim(), createdAt: new Date().toISOString() }
+
+  return true
+}
+
+const unbanUser = (_: unknown, { userId }: { userId: number }) => {
+  const user = MOCK_USERS.find((candidate) => candidate.id === userId)
+
+  if (!user?.userBan) {
+    return false
+  }
+
+  delete user.userBan
+
+  return true
+}
+
 type GetUsersArgs = {
   pageNumber?: number | null
   pageSize?: number | null
@@ -347,6 +371,8 @@ export const createServerSchema = () =>
           logged: email === ADMIN_EMAIL && password === ADMIN_PASSWORD,
         }),
         removeUser,
+        banUser,
+        unbanUser,
       },
       Query: {
         getUsers,
