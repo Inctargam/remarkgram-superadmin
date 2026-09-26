@@ -27,7 +27,6 @@ export const mapPaymentToListItem = (
   avatar: payment.avatars?.find((avatar) => avatar.url)?.url ?? null,
   createdAt: payment.createdAt ?? '',
   amount: payment.amount,
-  currency: payment.currency,
   subscription: SUBSCRIPTION_LABELS[payment.type],
   paymentMethod: PAYMENT_METHOD_LABELS[payment.paymentMethod],
 })

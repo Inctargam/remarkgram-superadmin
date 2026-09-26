@@ -93,9 +93,7 @@ export const PaymentsTable = ({ isLoading, items, sortBy, sortDirection, onToggl
               </Table.Cell>
               <Table.Cell>{formatShortDate(payment.createdAt)}</Table.Cell>
               <Table.Cell>
-                {payment.amount === null
-                  ? '—'
-                  : `${payment.amount}${payment.currency === 'EUR' ? '€' : '$'}`}
+                {payment.amount === null ? '—' : `${payment.amount}$`}
               </Table.Cell>
               <Table.Cell>{payment.subscription}</Table.Cell>
               <Table.Cell>{payment.paymentMethod}</Table.Cell>

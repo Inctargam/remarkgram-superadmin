@@ -4,7 +4,6 @@ export type PaymentListItem = {
   avatar: string | null
   createdAt: string
   amount: number | null
-  currency: 'USD' | 'EUR' | null
   subscription: string
   paymentMethod: string
 }
