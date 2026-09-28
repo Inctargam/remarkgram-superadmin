@@ -1,0 +1,104 @@
+.tableWrapper {
+  overflow: hidden;
+}
+
+.table {
+  table-layout: fixed;
+}
+
+.nameColumn {
+  width: 22%;
+}
+
+.dateColumn {
+  width: 17%;
+}
+
+.amountColumn {
+  width: 20.5%;
+}
+
+.subscriptionColumn {
+  width: 17.5%;
+}
+
+.methodColumn {
+  width: 23%;
+}
+
+.head {
+  background: #171717;
+}
+
+.head th {
+  height: 48px;
+  padding: 0 24px;
+}
+
+.row td {
+  height: 60px;
+  padding: 0 24px;
+  white-space: nowrap;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sortArrows {
+  display: inline-flex;
+  flex-direction: column;
+  color: #4c4c4c;
+  line-height: 0;
+}
+
+.sortArrowActive {
+  color: #fff;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.avatar,
+.avatarFallback {
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.avatar {
+  object-fit: cover;
+}
+
+.avatarFallback {
+  width: 36px;
+  height: 36px;
+  background: #4c4c4c;
+}
+
+.userName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (width <= 900px) {
+  .tableWrapper {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 900px;
+  }
+}

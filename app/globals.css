@@ -10,6 +10,10 @@ body {
   font-family: var(--font-base), sans-serif;
 }
 
+body:has([role='dialog']) {
+  --z-index-popup: 1200;
+}
+
 a {
   color: var(--color-primary-500);
   text-decoration: underline;
