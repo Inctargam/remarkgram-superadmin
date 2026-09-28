@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { GraphQLError } from 'graphql'
 import { createPubSub, createSchema } from 'graphql-yoga'
 
+import { MOCK_PAYMENTS } from './mockPayments'
+
 export const ADMIN_EMAIL = 'admin@gmail.com'
 export const ADMIN_PASSWORD = 'admin'
 
@@ -179,7 +181,6 @@ const getUsers = (_: unknown, args: GetUsersArgs) => {
     return aValue.localeCompare(bValue) * direction
   })
 
-  const totalCount = users.length
   const page = paginate(users, pageNumber, pageSize)
 
   return {
@@ -263,6 +264,36 @@ const getPaymentsByUser = (_: unknown, args: PageArgs & { userId: number }) => {
     const bValue = sortBy === 'paymentType' ? b.paymentType : (b.dateOfPayment ?? '')
 
     return aValue.localeCompare(bValue) * direction
+  })
+
+  return paginate(payments, pageNumber, pageSize)
+}
+
+type GetPaymentsArgs = PageArgs & { searchTerm?: string | null }
+type PaymentSortField = 'createdAt' | 'paymentMethod' | 'amount' | 'userName'
+
+const isPaymentSortField = (value: string): value is PaymentSortField =>
+  ['createdAt', 'paymentMethod', 'amount', 'userName'].includes(value)
+
+const getPayments = (_: unknown, args: GetPaymentsArgs) => {
+  const { pageNumber, pageSize, sortBy, sortDirection } = normalizePageArgs(args)
+  const searchTerm = args.searchTerm?.trim().toLowerCase() ?? ''
+  const sortField: PaymentSortField = isPaymentSortField(sortBy) ? sortBy : 'createdAt'
+  const direction = sortDirection === 'asc' ? 1 : -1
+
+  const payments = MOCK_PAYMENTS.filter((payment) =>
+    payment.userName.toLowerCase().includes(searchTerm)
+  )
+
+  payments.sort((first, second) => {
+    const left = first[sortField]
+    const right = second[sortField]
+    const result =
+      typeof left === 'number' && typeof right === 'number'
+        ? left - right
+        : String(left).localeCompare(String(right))
+
+    return result * direction
   })
 
   return paginate(payments, pageNumber, pageSize)
@@ -532,6 +563,7 @@ export const createServerSchema = () =>
         getUsers,
         getUser,
         getPaymentsByUser,
+        getPayments,
         getFollowers,
         getFollowing,
         getPostsByUser,
