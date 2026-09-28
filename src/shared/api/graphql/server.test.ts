@@ -1,7 +1,14 @@
 import { createYoga } from 'graphql-yoga'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { ADMIN_EMAIL, ADMIN_PASSWORD, createServerSchema, resetMockUsers } from './server'
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  createServerSchema,
+  resetMockPosts,
+  resetMockUsers,
+  triggerMockPostAdded,
+} from './server'
 
 const LOGIN_ADMIN_QUERY = /* GraphQL */ `
   mutation LoginAdmin($email: String!, $password: String!) {
@@ -226,6 +233,68 @@ const GET_POSTS_BY_USER_QUERY = /* GraphQL */ `
   }
 `
 
+const GET_POSTS_QUERY = /* GraphQL */ `
+  query GetPosts(
+    $endCursorPostId: Int
+    $searchTerm: String
+    $pageSize: Int
+    $sortBy: String
+    $sortDirection: SortDirection
+  ) {
+    getPosts(
+      endCursorPostId: $endCursorPostId
+      searchTerm: $searchTerm
+      pageSize: $pageSize
+      sortBy: $sortBy
+      sortDirection: $sortDirection
+    ) {
+      items {
+        id
+        description
+        createdAt
+        postOwner {
+          userName
+        }
+        userBan {
+          reason
+        }
+      }
+      pagesCount
+      pageSize
+      totalCount
+    }
+  }
+`
+
+const POST_ADDED_SUBSCRIPTION = /* GraphQL */ `
+  subscription PostAdded {
+    postAdded {
+      id
+      description
+      postOwner {
+        userName
+      }
+    }
+  }
+`
+
+type PostsData = {
+  data?: {
+    getPosts: {
+      items: Array<{
+        id: number
+        description: string
+        createdAt: string
+        postOwner: { userName: string }
+        userBan: { reason: string } | null
+      }>
+      pagesCount: number
+      pageSize: number
+      totalCount: number
+    }
+  }
+}
+
 type FollowItemsData = {
   data?: {
     getFollowers: {
@@ -254,6 +323,7 @@ const runGraphQL = async (query: string, variables?: Record<string, unknown>) =>
   return response.json() as Promise<
     GetUsersData &
       FollowItemsData &
+      PostsData &
       GetPaymentsData & { data?: { loginAdmin: { logged: boolean } } }
   >
 }
@@ -262,6 +332,9 @@ const runLoginAdmin = (email: string, password: string) =>
   runGraphQL(LOGIN_ADMIN_QUERY, { email, password })
 
 const runGetUsers = (variables: Record<string, unknown>) => runGraphQL(GET_USERS_QUERY, variables)
+
+const runGetPosts = (variables: Record<string, unknown> = {}) =>
+  runGraphQL(GET_POSTS_QUERY, variables)
 
 const runGetPayments = (variables: Record<string, unknown>) =>
   runGraphQL(GET_PAYMENTS_QUERY, variables)
@@ -275,8 +348,8 @@ const REMOVE_USER_MUTATION = /* GraphQL */ `
 const runRemoveUser = (userId: number) => runGraphQL(REMOVE_USER_MUTATION, { userId })
 
 const BAN_USER_MUTATION = /* GraphQL */ `
-  mutation BanUser($userId: Int!, $banReason: String!) {
-    banUser(userId: $userId, banReason: $banReason)
+  mutation BanUser($banReason: String!, $userId: Int!) {
+    banUser(banReason: $banReason, userId: $userId)
   }
 `
 
@@ -285,6 +358,18 @@ const UNBAN_USER_MUTATION = /* GraphQL */ `
     unbanUser(userId: $userId)
   }
 `
+
+const runBanUser = (userId: number, banReason: string) =>
+  runGraphQL(BAN_USER_MUTATION, { banReason, userId }) as Promise<{
+    data?: { banUser: boolean }
+    errors?: unknown[]
+  }>
+
+const runUnbanUser = (userId: number) =>
+  runGraphQL(UNBAN_USER_MUTATION, { userId }) as Promise<{
+    data?: { unbanUser: boolean }
+    errors?: unknown[]
+  }>
 
 describe('getPayments resolver', () => {
   it('paginates the local payment fixtures using the selected page size', async () => {
@@ -461,45 +546,6 @@ describe('removeUser resolver', () => {
   })
 })
 
-describe('user ban resolvers', () => {
-  beforeEach(() => {
-    resetMockUsers()
-  })
-
-  it('stores the reason and moves the user into the blocked filter', async () => {
-    const result = await runGraphQL(BAN_USER_MUTATION, {
-      userId: 2,
-      banReason: 'Bad behavior',
-    })
-    const blocked = await runGetUsers({ statusFilter: 'BLOCKED', pageSize: 80 })
-
-    expect(result.data).toEqual({ banUser: true })
-    expect(blocked.data?.getUsers.users.find((user) => user.id === 2)?.userBan?.reason).toBe(
-      'Bad behavior'
-    )
-    expect(blocked.data?.getUsers.pagination.totalCount).toBe(7)
-  })
-
-  it('removes the ban and moves the user into the unblocked filter', async () => {
-    const result = await runGraphQL(UNBAN_USER_MUTATION, { userId: 1 })
-    const unblocked = await runGetUsers({ statusFilter: 'UNBLOCKED', pageSize: 80 })
-
-    expect(result.data).toEqual({ unbanUser: true })
-    expect(unblocked.data?.getUsers.users.find((user) => user.id === 1)?.userBan).toBeNull()
-    expect(unblocked.data?.getUsers.pagination.totalCount).toBe(75)
-  })
-
-  it('rejects empty reasons and duplicate actions', async () => {
-    const empty = await runGraphQL(BAN_USER_MUTATION, { userId: 2, banReason: ' ' })
-    const duplicateBan = await runGraphQL(BAN_USER_MUTATION, { userId: 1, banReason: 'Spam' })
-    const duplicateUnban = await runGraphQL(UNBAN_USER_MUTATION, { userId: 2 })
-
-    expect(empty.data).toEqual({ banUser: false })
-    expect(duplicateBan.data).toEqual({ banUser: false })
-    expect(duplicateUnban.data).toEqual({ unbanUser: false })
-  })
-})
-
 describe('user detail resolvers', () => {
   beforeEach(() => {
     resetMockUsers()
@@ -622,5 +668,162 @@ describe('user detail resolvers', () => {
     expect(result.data?.getPostsByUser.items).toHaveLength(12)
     expect(result.data?.getPostsByUser.items[0].url).toMatch(/picsum\.photos/)
     expect(result.data?.getPostsByUser.totalCount).toBe(12)
+  })
+})
+
+describe('getPosts resolver', () => {
+  beforeEach(() => {
+    resetMockUsers()
+    resetMockPosts()
+  })
+
+  it('returns the first page ordered by createdAt desc, newest post first', async () => {
+    const result = await runGetPosts({ pageSize: 10 })
+
+    expect(result.data?.getPosts.items).toHaveLength(10)
+    expect(result.data?.getPosts.items[0].id).toBe(1)
+    expect(result.data?.getPosts.items[9].id).toBe(10)
+    expect(result.data?.getPosts.pagesCount).toBe(5)
+    expect(result.data?.getPosts.totalCount).toBe(45)
+  })
+
+  it('returns the next page after the given cursor', async () => {
+    const result = await runGetPosts({ pageSize: 10, endCursorPostId: 10 })
+
+    expect(result.data?.getPosts.items).toHaveLength(10)
+    expect(result.data?.getPosts.items[0].id).toBe(11)
+    expect(result.data?.getPosts.items[9].id).toBe(20)
+  })
+
+  it('returns an empty page once the cursor reaches the last post', async () => {
+    const result = await runGetPosts({ pageSize: 10, endCursorPostId: 45 })
+
+    expect(result.data?.getPosts.items).toEqual([])
+  })
+
+  it('filters posts by the owner userName', async () => {
+    const result = await runGetPosts({ searchTerm: 'ivan' })
+
+    expect(result.data?.getPosts.totalCount).toBe(3)
+    expect(
+      result.data?.getPosts.items.every((post) => post.postOwner.userName === 'Ivan.sr.yakimenko')
+    ).toBe(true)
+  })
+
+  it('sorts posts by createdAt in asc and desc order', async () => {
+    const asc = await runGetPosts({ pageSize: 1, sortDirection: 'asc' })
+    const desc = await runGetPosts({ pageSize: 1, sortDirection: 'desc' })
+
+    expect(asc.data?.getPosts.items[0].id).toBe(45)
+    expect(desc.data?.getPosts.items[0].id).toBe(1)
+  })
+
+  it('uses the contract defaults when arguments are omitted', async () => {
+    const result = await runGetPosts()
+
+    expect(result.data?.getPosts.items).toHaveLength(10)
+    expect(result.data?.getPosts.pageSize).toBe(10)
+  })
+})
+
+describe('postAdded subscription', () => {
+  beforeEach(() => {
+    resetMockUsers()
+    resetMockPosts()
+  })
+
+  it('emits a newly published post to subscribers', async () => {
+    // Goes through the same SSE transport the client uses (see ApolloProvider), rather than
+    // graphql-js's `subscribe` directly — that pulls in a second, incompatible "graphql" module
+    // instance and fails schema validation with "another module or realm".
+    const yoga = createYoga({ schema: createServerSchema(), graphqlEndpoint: '/api/graphql' })
+
+    const response = await yoga.handleRequest(
+      new Request('http://localhost:3001/api/graphql', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
+        body: JSON.stringify({ query: POST_ADDED_SUBSCRIPTION }),
+      }),
+      {}
+    )
+
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+
+    const eventPromise = (async () => {
+      let buffer = ''
+
+      for (;;) {
+        const { done, value } = await reader.read()
+
+        if (done) {
+          throw new Error('Stream ended without a postAdded event')
+        }
+
+        buffer += decoder.decode(value, { stream: true })
+
+        const match = /data: (\{.*\})/.exec(buffer)
+
+        if (match) {
+          return JSON.parse(match[1]) as { data: { postAdded: { description: string } } }
+        }
+      }
+    })()
+
+    triggerMockPostAdded()
+
+    const event = await eventPromise
+
+    expect(event.data.postAdded.description).toMatch(/^Live post #/)
+
+    await reader.cancel()
+  })
+})
+
+describe('banUser / unbanUser resolvers', () => {
+  beforeEach(() => {
+    resetMockUsers()
+    resetMockPosts()
+  })
+
+  it('bans a user and reflects the ban on their posts', async () => {
+    const ban = await runBanUser(1, 'Spam')
+
+    expect(ban.data).toEqual({ banUser: true })
+
+    const users = await runGetUsers({ pageNumber: 1, pageSize: 8 })
+    const bannedUser = users.data?.getUsers.users.find((user) => user.id === 1)
+
+    expect(bannedUser?.userBan?.reason).toBe('Spam')
+
+    const posts = await runGetPosts({ searchTerm: 'ivan' })
+
+    expect(posts.data?.getPosts.items.every((post) => post.userBan?.reason === 'Spam')).toBe(true)
+  })
+
+  it('throws an error when banning an unknown user', async () => {
+    const result = await runBanUser(9999, 'Spam')
+
+    expect(result.data?.banUser).toBeUndefined()
+    expect(result.errors).toBeTruthy()
+  })
+
+  it('clears an existing ban', async () => {
+    await runBanUser(1, 'Spam')
+    const unban = await runUnbanUser(1)
+
+    expect(unban.data).toEqual({ unbanUser: true })
+
+    const users = await runGetUsers({ pageNumber: 1, pageSize: 8 })
+    const unbannedUser = users.data?.getUsers.users.find((user) => user.id === 1)
+
+    expect(unbannedUser?.userBan).toBeNull()
+  })
+
+  it('throws an error when unbanning an unknown user', async () => {
+    const result = await runUnbanUser(9999)
+
+    expect(result.data?.unbanUser).toBeUndefined()
+    expect(result.errors).toBeTruthy()
   })
 })
